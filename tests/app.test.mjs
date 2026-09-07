@@ -218,8 +218,9 @@ test("demo: exact glyph order, release, replay, share, and official Yoshino voti
   }
 });
 
-test("demo caps at 30 seconds and clears the animation loop", async () => {
+test("demo caps at 30 seconds, preserves the drawn order, and reshuffles on replay", async (t) => {
   const env = await setup();
+  const random = t.mock.method(Math, "random", () => 0);
   try {
     await env.$("demo-button").emit("click");
     await env.$("hold-button").emit("keydown", { key: "Enter", repeat: false });
@@ -228,6 +229,35 @@ test("demo caps at 30 seconds and clears the animation loop", async () => {
     assert.equal(env.$("result-time").textContent, "30.0");
     assert.equal(env.$("result-count").textContent, "31");
     assert.equal(env.frames.size, 0);
+    const resultGlyphs = () =>
+      env.$("result-kanji").children.map((tile) => tile.textContent);
+    const first = resultGlyphs();
+    assert.deepEqual(first.slice(0, 4), ["武", "謳", "鶯", "王"]);
+    assert.equal(new Set(first).size, 31);
+    assert.deepEqual(
+      env.$("particles").children.map((particle) => particle.textContent),
+      first,
+    );
+    let shared = "";
+    env.navigator.clipboard = {
+      writeText: async (text) => {
+        shared = text;
+      },
+    };
+    await env.$("share-button").emit("click");
+    assert.ok(shared.includes(`「${first.join("")}」`));
+
+    await env.$("again-button").emit("click");
+    random.mock.mockImplementation(() => 0.999999);
+    await env.$("hold-button").emit("keydown", { key: "Enter", repeat: false });
+    env.tick(62000);
+    const second = resultGlyphs();
+    assert.equal(env.state, "result");
+    assert.deepEqual(second.slice(0, 4), first.slice(0, 4));
+    assert.equal(new Set(second).size, 31);
+    assert.notDeepEqual(second.slice(4), first.slice(4));
+    await env.$("share-button").emit("click");
+    assert.ok(shared.includes(`「${second.join("")}」`));
   } finally {
     env.restore();
   }

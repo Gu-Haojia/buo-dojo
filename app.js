@@ -1,5 +1,5 @@
 import { CONFIG } from "./config.js";
-import { BreathDetector, analyzeSignal, glyphAt } from "./breath.js";
+import { BreathDetector, analyzeSignal, createGlyphSequence } from "./breath.js";
 
 const $ = (id) => document.getElementById(id);
 const characters = [...document.querySelectorAll(".character")];
@@ -165,7 +165,13 @@ function hideModal(dialog) {
 
 function beginBlow(startedAt) {
   clearTimeout(hintTimer);
-  round = { startedAt, elapsedMs: 0, glyphs: [], mode };
+  round = {
+    startedAt,
+    elapsedMs: 0,
+    glyphs: [],
+    sequence: createGlyphSequence(),
+    mode,
+  };
   setState("blowing");
   advanceRound(0);
 }
@@ -196,7 +202,7 @@ function advanceRound(elapsedMs) {
   const targetCount = Math.floor(round.elapsedMs / CONFIG.kanjiIntervalMs) + 1;
   while (round.glyphs.length < targetCount) {
     const index = round.glyphs.length,
-      glyph = glyphAt(index);
+      glyph = round.sequence.next().value;
     round.glyphs.push(glyph);
     spawnGlyph(glyph, index);
   }

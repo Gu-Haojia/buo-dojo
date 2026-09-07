@@ -1,5 +1,7 @@
 // The first four glyphs are the requested playful "ぶおー" sequence.
 // Following glyphs have the reading オ / お, including kun and uncommon readings.
+// Reading references: https://www.kanjipedia.jp/sakuin/onkun/%E3%82%AA
+// https://kanjitisiki.com/yomi-sakuin/05.html (the オ and お sections only).
 export const OPENING_KANJI = Object.freeze(["武", "謳", "鶯", "王"]);
 export const O_KANJI = Object.freeze([
   "緒",
@@ -17,14 +19,36 @@ export const O_KANJI = Object.freeze([
   "飫",
   "汚",
   "悪",
+  "唹",
+  "塢",
+  "淤",
+  "洿",
+  "鄔",
+  "瘀",
+  "杇",
+  "汙",
+  "龢",
+  "圬",
+  "弙",
+  "棜",
+  "瑦",
+  "螐",
+  "隖",
+  "饇",
+  "鰞",
 ]);
 
-export function glyphAt(index) {
-  if (!Number.isInteger(index) || index < 0)
-    throw new RangeError("Invalid glyph index");
-  return index < 4
-    ? OPENING_KANJI[index]
-    : O_KANJI[(index - 4) % O_KANJI.length];
+/** Each round owns its sequence; draw every candidate once before reshuffling. */
+export function* createGlyphSequence(random = Math.random) {
+  yield* OPENING_KANJI;
+  while (true) {
+    const pool = [...O_KANJI];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    yield* pool;
+  }
 }
 export function glyphsForDuration(durationMs, intervalMs = 1000) {
   if (
@@ -34,9 +58,10 @@ export function glyphsForDuration(durationMs, intervalMs = 1000) {
     intervalMs <= 0
   )
     throw new RangeError("Invalid duration");
+  const sequence = createGlyphSequence();
   return Array.from(
     { length: Math.floor(durationMs / intervalMs) + 1 },
-    (_, index) => glyphAt(index),
+    () => sequence.next().value,
   );
 }
 

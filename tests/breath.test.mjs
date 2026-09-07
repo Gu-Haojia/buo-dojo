@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import {
   BreathDetector,
   analyzeSignal,
-  glyphAt,
+  createGlyphSequence,
   glyphsForDuration,
+  OPENING_KANJI,
   O_KANJI,
 } from "../breath.js";
 import { CONFIG } from "../config.js";
@@ -30,11 +31,23 @@ function calibrated(options = {}) {
   return detector;
 }
 
-test("the requested opening is followed by a varied お reading pool", () => {
+test("each sequence keeps the opening and draws the complete pool without repeats", () => {
   assert.deepEqual(glyphsForDuration(3100), ["武", "謳", "鶯", "王"]);
-  assert.equal(glyphAt(4), "緒");
+  assert.ok(O_KANJI.length >= 32);
   assert.equal(new Set(O_KANJI).size, O_KANJI.length);
-  assert.equal(glyphAt(4 + O_KANJI.length), O_KANJI[0]);
+  assert.ok(O_KANJI.every((glyph) => !OPENING_KANJI.includes(glyph)));
+  const first = createGlyphSequence(() => 0);
+  const second = createGlyphSequence(() => 0.999999);
+  const take = (sequence, count) =>
+    Array.from({ length: count }, () => sequence.next().value);
+  assert.deepEqual(take(first, 4), OPENING_KANJI);
+  assert.deepEqual(take(second, 4), OPENING_KANJI);
+  const firstPool = take(first, O_KANJI.length);
+  const secondPool = take(second, O_KANJI.length);
+  assert.deepEqual(new Set(firstPool), new Set(O_KANJI));
+  assert.deepEqual(new Set(secondPool), new Set(O_KANJI));
+  assert.notDeepEqual(firstPool, secondPool);
+  assert.deepEqual(new Set(take(first, O_KANJI.length)), new Set(O_KANJI));
 });
 test("one initial glyph, then one each second, including the exact boundary", () => {
   assert.equal(glyphsForDuration(0).length, 1);
@@ -43,7 +56,6 @@ test("one initial glyph, then one each second, including the exact boundary", ()
   assert.equal(glyphsForDuration(30000).length, 31);
   assert.throws(() => glyphsForDuration(-1), RangeError);
   assert.throws(() => glyphsForDuration(1, 0), RangeError);
-  assert.throws(() => glyphAt(-1), RangeError);
 });
 test("quiet input never starts a round", () => {
   const detector = calibrated();
