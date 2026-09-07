@@ -158,7 +158,6 @@ function reset() {
   $("live-time").textContent = "0.0";
   $("dojo").dataset.phase = "regular";
   $("dojo").style.setProperty("--charge", 0);
-  $("dojo").style.setProperty("--blow-speed", "0.72s");
   $("charge-cue").hidden = true;
   $("charge-orbit").hidden = true;
   $("finale-effect").hidden = true;
@@ -196,6 +195,10 @@ function beginBlow(startedAt) {
     mode,
   };
   setState("blowing");
+  round.animation = characters
+    .find((element) => element.classList.contains("character-c"))
+    .getAnimations()
+    .find((animation) => animation.animationName === "blow");
   advanceRound(0);
 }
 
@@ -237,10 +240,9 @@ function advanceRound(elapsedMs) {
       $("button-note").textContent = "花がそろうと、最後のひと文字。";
     }
     $("dojo").style.setProperty("--charge", progress.charge);
-    $("dojo").style.setProperty(
-      "--blow-speed",
-      `${0.72 - progress.charge * 0.2}s`,
-    );
+    // Changing duration would recalculate every elapsed iteration. Adjust the
+    // playback rate instead so acceleration preserves the current pose.
+    round.animation?.updatePlaybackRate(0.72 / (0.72 - progress.charge * 0.2));
     const remaining = Math.ceil(
       (CONFIG.maxBlowSeconds * 1000 - round.elapsedMs) / 1000,
     );
@@ -271,6 +273,7 @@ function finishRound(elapsedMs = round?.elapsedMs, detail = "") {
   $("charge-cue").hidden = true;
   $("charge-orbit").hidden = true;
   if (lastResult.mastery) {
+    round.animation?.updatePlaybackRate(0.72 / 1.5);
     setState("celebrating");
     $("finale-kanji").textContent = CONFIG.finalKanji;
     $("finale-effect").hidden = false;

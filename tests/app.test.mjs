@@ -36,6 +36,9 @@ class Element {
     this.children = children;
   }
   remove() {}
+  getAnimations() {
+    return [];
+  }
   focus() {
     document.activeElement = this;
   }

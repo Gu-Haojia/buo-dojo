@@ -264,3 +264,79 @@ test("charging and the final animation keep the stage fixed before mastery resul
   await expect(page.locator("#mastery-award")).not.toBeVisible();
   await expect(page.locator("#result-overline")).toHaveText("本日の、ひと吹き");
 });
+
+test("charging completes about eight real animation cycles without retiming past motion", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 393, height: 852 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  // Skip the ordinary phase in both clocks, then measure real compositor time.
+  // Playwright's fake clock alone does not advance CSS animations.
+  await page.addInitScript(() => {
+    const now = performance.now.bind(performance);
+    const frame = requestAnimationFrame.bind(window);
+    let offset = 0;
+    Object.defineProperty(performance, "now", {
+      value: () => now() + offset,
+    });
+    window.requestAnimationFrame = (callback) =>
+      frame((time) => callback(time + offset));
+    window.skipOrdinaryPhase = () => {
+      offset += 20000;
+      const animation = document
+        .querySelector(".character-c")
+        .getAnimations()[0];
+      animation.currentTime += 20000;
+    };
+  });
+  await page.goto("/");
+  await page.locator("#demo-button").click();
+  await page.locator("#hold-button").focus();
+  await page.keyboard.down("Space");
+  const motion = await page.evaluate(async () => {
+    window.skipOrdinaryPhase();
+    const element = document.querySelector(".character-c");
+    const animation = element.getAnimations()[0];
+    let first, last;
+    return new Promise((resolve) => {
+      function sample() {
+        const dojo = document.querySelector("#dojo");
+        if (dojo.dataset.state !== "blowing") {
+          resolve({
+            seconds: (last.time - first.time) / 1000,
+            cycles: last.phase - first.phase,
+          });
+          return;
+        }
+        if (dojo.dataset.phase === "charging") {
+          const timing = animation.effect.getComputedTiming();
+          const value = {
+            time: document.timeline.currentTime,
+            phase: timing.currentIteration + timing.progress,
+          };
+          first ||= value;
+          last = value;
+        }
+        requestAnimationFrame(sample);
+      }
+      sample();
+    });
+  });
+  await page.keyboard.up("Space");
+  expect(motion.seconds).toBeGreaterThan(4.7);
+  expect(motion.cycles).toBeGreaterThan(7.5);
+  expect(motion.cycles).toBeLessThan(9);
+  await expect(page.locator("#result-dialog")).toBeVisible();
+  await expect(page.locator("#result-stamp")).toHaveText("皆伝");
+  await expect(page.locator("#result-overline")).toHaveText("本日の、ひと吹き");
+  await page.locator("#again-button").click();
+  await page.keyboard.down("Space");
+  const replayPeriod = await page
+    .locator(".character-c")
+    .evaluate((element) => {
+      const animation = element.getAnimations()[0];
+      return animation.effect.getTiming().duration / animation.playbackRate;
+    });
+  expect(replayPeriod).toBe(720);
+  await page.keyboard.up("Space");
+});

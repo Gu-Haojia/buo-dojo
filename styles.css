@@ -1218,9 +1218,6 @@ button:not(:disabled):active,
 }
 
 /* Final five seconds: gather light at the conch, then release the reward glyph. */
-.character-c {
-  animation-duration: var(--blow-speed, 0.72s);
-}
 .charge-cue {
   position: absolute;
   top: 0;
@@ -1309,9 +1306,6 @@ button:not(:disabled):active,
 }
 [data-state="celebrating"] .speech {
   opacity: 0;
-}
-[data-state="celebrating"] .character-c {
-  animation-duration: 1.5s;
 }
 .finale-effect {
   position: absolute;
