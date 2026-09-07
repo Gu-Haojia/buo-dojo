@@ -221,7 +221,18 @@ function finishRound(elapsedMs = round?.elapsedMs, detail = "") {
     lastResult.durationMs >= 10000
       ? "遠くまで、届きましてー。"
       : "よき響きでしてー。";
-  $("result-detail").textContent = detail || "ひと息ぶんの想い、届きました。";
+  $("result-detail").textContent = detail;
+  $("result-detail").hidden = !detail;
+  const glyphCount = lastResult.glyphs.length;
+  const columns =
+    glyphCount <= 4
+      ? glyphCount
+      : Math.min(8, Math.ceil(Math.sqrt(glyphCount * 1.8)));
+  $("result-kanji").style.setProperty("--glyph-columns", columns);
+  $("result-kanji").style.setProperty(
+    "--glyph-rows",
+    Math.ceil(glyphCount / columns),
+  );
   $("result-kanji").replaceChildren(
     ...lastResult.glyphs.map((glyph, index) => {
       const tile = document.createElement("span");
@@ -368,9 +379,7 @@ async function startMicrophone() {
       if (event.type === "end") {
         finishRound(
           event.durationMs,
-          event.capped
-            ? "30秒、よく響きました。少し、ひと休みしましょう。"
-            : "",
+          event.capped ? "30秒で終了しました。" : "",
         );
         return;
       }
@@ -396,10 +405,7 @@ function startHold() {
     if (state !== "blowing" || mode !== "demo") return;
     advanceRound(now - round.startedAt);
     if (round.elapsedMs >= CONFIG.maxBlowSeconds * 1000) {
-      finishRound(
-        round.elapsedMs,
-        "30秒、よく響きました。少し、ひと休みしましょう。",
-      );
+      finishRound(round.elapsedMs, "30秒で終了しました。");
       return;
     }
     frameId = requestAnimationFrame(tick);

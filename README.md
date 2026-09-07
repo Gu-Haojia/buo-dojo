@@ -18,7 +18,7 @@
 
 ### 使用自动检查与部署
 
-仓库包含 `.github/workflows/pages.yml`。若使用此方式，在 Settings → Pages 将 Source 设为 **GitHub Actions**，推送到 `main` 或手动运行工作流。工作流会进行语法检查、自动测试、打包和部署；无需安装 npm 依赖。两种部署方式选一种即可。参考 [GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。
+仓库包含 `.github/workflows/pages.yml`。若使用此方式，在 Settings → Pages 将 Source 设为 **GitHub Actions**，推送到 `main` 或手动运行工作流。工作流会安装测试所需的开发依赖和 Chromium，再进行语法检查、自动测试、手机尺寸布局测试、打包和部署。网站运行仍无第三方依赖。两种部署方式选一种即可。参考 [GitHub Pages 自定义工作流](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。
 
 ### 本地预览
 
@@ -75,8 +75,22 @@ Web Audio 在端侧分析音量、频谱平坦度、高低频分布，并结合�
 
 自动测试覆盖汉字序列与边界、30 秒上限、环境校准、吹气去抖、结束计时、短暂停顿、灵敏度、频谱计算，以及模拟浏览器依赖下的交互和麦克风资源清理。模拟信号和环境不能替代 iPhone / Android 的真机麦克风体验。
 
+另外提供 10 项 Chromium 布局回归检查，覆盖 320×568、375×667、390×844、430×932 和 768×1024：请求权限、校准、等待吹气和吹响期间，人物区域的高度和位置保持不变；三张图按实际人物轮廓校正视觉高度；最多 31 个汉字按数量和可用宽度缩放，完整显示，不使用内部滚动条。
+
+运行布局检查：
+
+```sh
+npm ci
+npx playwright install chromium
+npm run test:layout
+```
+
+macOS 若已安装 Chrome，会直接使用系统 Chrome；其他环境使用 Playwright 的 Chromium。
+
 浏览器若支持实验性的 `document.modelContext`，另有读取游戏状态和准备长按试玩的工具；不支持时完全不影响游戏。实际浏览器 WebMCP 注册尚未验证。
 
 ## 素材
 
-`assets/` 中四个 PNG 原样保留，通过 CSS 排版与动画使用。没有使用参考网站的代码、图片或设计；没有新增来自いらすとや的图片。
+`assets/` 中原始四个 PNG 保留。页面标题使用新增的 `title-logo-transparent.png`，从原始标题通过边缘连通白底分离获得，带真实 RGBA 透明通道。生成式工具输出的棋盘格版本未采用。`scripts/extract-logo.py` 可重做抠图（维护时需要 Pillow、NumPy、SciPy，网站运行和构建不需要 Python）。三个人物图片仍是原文件，仅用 CSS 校准显示比例和动画。
+
+没有使用参考网站的代码、图片或设计；没有新增来自いらすとや的图片。

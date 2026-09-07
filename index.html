@@ -14,12 +14,12 @@
     <meta property="og:title" content="ぶおー法螺貝道場" />
     <meta
       property="og:description"
-      content="芳乃といっしょに、ぶおー。ひと吹きに、願いをこめて。"
+      content="芳乃といっしょに、ぶおー！スマホで遊べる法螺貝ゲーム。"
     />
     <meta property="og:type" content="website" />
-    <title>ぶおー法螺貝道場｜芳乃と、ひと息。</title>
+    <title>ぶおー法螺貝道場</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-    <link rel="preload" href="./assets/title%20logo.PNG" as="image" />
+    <link rel="preload" href="./assets/title-logo-transparent.png" as="image" />
     <link rel="preload" href="./assets/character%20A.PNG" as="image" />
     <link rel="stylesheet" href="./styles.css" />
     <script type="module" src="./app.js"></script>
@@ -62,8 +62,8 @@
     <main class="dojo" id="dojo" data-state="idle">
       <header class="masthead">
         <div class="topline">
-          <span class="little-label"
-            ><span aria-hidden="true">✿</span> 芳乃と、ひと息。</span
+          <span class="header-ornament" aria-hidden="true"
+            ><span>✿</span><span>✧</span><span>✿</span></span
           ><button
             class="round-button"
             id="help-button"
@@ -75,14 +75,13 @@
         <h1>
           <img
             class="title-logo"
-            src="./assets/title%20logo.PNG"
+            src="./assets/title-logo-transparent.png"
             alt="ぶおー法螺貝道場"
             width="2172"
             height="724"
             fetchpriority="high"
           />
         </h1>
-        <p class="invitation">ひと吹きに、願いをこめて。</p>
       </header>
 
       <section class="stage" aria-label="芳乃の法螺貝道場">
@@ -187,8 +186,6 @@
       </section>
 
       <footer class="footer">
-        <span class="footer-rule" aria-hidden="true"></span>
-        <p>今日も、よき風が吹きますように。</p>
         <small>依田芳乃 非公式ファンゲーム</small>
       </footer>
     </main>
@@ -212,7 +209,6 @@
         <div class="result-stamp" aria-hidden="true">大変<br />よき音</div>
       </div>
       <div class="result-body">
-        <span class="mode-badge" id="result-mode" hidden>おためしの記録</span>
         <div class="result-label">
           そなたが奏でた漢字
           <span><strong id="result-count">0</strong> 文字</span>
@@ -223,12 +219,14 @@
           aria-label="今回吹き出した漢字"
         ></div>
         <div class="time-result">
-          <span>吹いた時間</span>
+          <span class="time-label"
+            >吹いた時間<span class="mode-badge" id="result-mode" hidden
+              >おためし</span
+            ></span
+          >
           <div><strong id="result-time">0.0</strong><span>秒</span></div>
         </div>
-        <p class="result-detail" id="result-detail">
-          ひと息ぶんの想い、届きました。
-        </p>
+        <p class="result-detail" id="result-detail" hidden></p>
         <button class="primary-button" id="again-button">
           <svg class="icon" aria-hidden="true"><use href="#icon-repeat" /></svg
           >もう一度吹く</button
@@ -243,7 +241,7 @@
             <use href="#icon-arrow" /></svg></a
         ><button class="share-button text-button" id="share-button">
           <svg class="icon" aria-hidden="true"><use href="#icon-share" /></svg
-          >このひと吹きをシェア</button
+          >結果をシェア</button
         ><textarea
           id="share-fallback"
           readonly
@@ -264,7 +262,7 @@
         aria-label="あそびかたを閉じる"
       >
         <svg class="icon"><use href="#icon-close" /></svg></button
-      ><span class="result-overline">芳乃と、法螺貝あそび</span>
+      ><span class="result-overline">ぶおー法螺貝道場</span>
       <h2 id="help-title">あそびかた</h2>
       <ol class="instructions">
         <li>
