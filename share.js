@@ -5,7 +5,19 @@ export function shareText(result, href) {
   const url = new URL("./", href);
   url.search = "";
   url.hash = "";
-  return `ぶおー！\n${result.mode === "demo" ? "【おためし】" : ""}${result.mastery ? `【皆伝】最後の一文字「${CONFIG.finalKanji}」まで！\n` : ""}${(Math.floor(result.durationMs / 100) / 10).toFixed(1)}秒で${result.glyphs.length}文字！\n「${result.glyphs.join("")}」\n${CONFIG.shareHashtags.map((tag) => `#${tag}`).join(" ")}\n${url.href}`;
+  const seconds = (Math.floor(result.durationMs / 100) / 10).toFixed(1);
+  return `🐚＼ 法螺貝、何秒吹ける？ ／🐚
+
+依田芳乃ちゃんと「ぶおおー」してきましたー。
+
+今回の記録は
+【${result.glyphs.length}文字／${seconds}秒】！
+
+そなたもスマホに、ふーっと。👇
+
+${CONFIG.shareHashtags.map((tag) => `#${tag}`).join("\n")}
+
+${url.href}`;
 }
 
 /** A result owns its artwork until replay; exports never upload data. */

@@ -220,8 +220,23 @@ test("demo: exact glyph order, release, replay, share, and official Yoshino voti
     await env.$("share-preview-button").emit("click");
     assert.equal(env.$("result-dialog").dataset.view, "share");
     await env.$("share-copy-text").emit("click");
-    assert.match(shared, /【おためし】2.5秒/);
-    assert.match(shared, /https:\/\/sample.github.io\/yoshino\//);
+    assert.equal(
+      shared,
+      `🐚＼ 法螺貝、何秒吹ける？ ／🐚
+
+依田芳乃ちゃんと「ぶおおー」してきましたー。
+
+今回の記録は
+【4文字／2.5秒】！
+
+そなたもスマホに、ふーっと。👇
+
+#ぶおー法螺貝道場
+#依田芳乃
+#シンデレラガール総選挙2026
+
+https://sample.github.io/yoshino/`,
+    );
     assert.equal(
       env.$("vote-button").href,
       "https://idolmaster-official.jp/cinderellagirls/vote2026/vote/idol/yorita_yoshino",
@@ -277,8 +292,7 @@ test("demo caps at 25 seconds, celebrates, preserves the drawn order, and reshuf
     };
     await env.$("share-preview-button").emit("click");
     await env.$("share-copy-text").emit("click");
-    assert.ok(shared.includes(`「${first.join("")}」`));
-    assert.match(shared, /【おためし】【皆伝】/);
+    assert.match(shared, /【31文字／25\.0秒】！/);
 
     await env.$("again-button").emit("click");
     random.mock.mockImplementation(() => 0.999999);
@@ -293,7 +307,7 @@ test("demo caps at 25 seconds, celebrates, preserves the drawn order, and reshuf
     assert.notDeepEqual(second.slice(4), first.slice(4));
     await env.$("share-preview-button").emit("click");
     await env.$("share-copy-text").emit("click");
-    assert.ok(shared.includes(`「${second.join("")}」`));
+    assert.match(shared, /【31文字／25\.0秒】！/);
   } finally {
     env.restore();
   }
@@ -373,10 +387,13 @@ test("X sharing offers selectable post text when the clipboard is unavailable", 
     await env.$("share-preview-button").emit("click");
     const intent = new URL(env.$("share-web").href);
     assert.equal(intent.origin, "https://x.com");
-    assert.match(intent.searchParams.get("text"), /武謳/);
+    assert.match(intent.searchParams.get("text"), /【2文字／1\.2秒】！/);
     await env.$("share-copy-text").emit("click");
     assert.equal(env.$("share-fallback").hidden, false);
-    assert.match(env.$("share-fallback").value, /武謳/);
+    assert.equal(
+      env.$("share-fallback").value,
+      intent.searchParams.get("text"),
+    );
   } finally {
     env.restore();
   }

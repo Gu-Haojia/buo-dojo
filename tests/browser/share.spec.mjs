@@ -236,9 +236,10 @@ test("mobile shares a real PNG and caption inside the tap activation; cancellati
     signature: [137, 80, 78, 71, 13, 10, 26, 10],
   });
   expect(shared.bytes).toBeGreaterThan(10000);
-  expect(shared.text).toContain("25.0秒で31文字");
+  expect(shared.text).toContain("【31文字／25.0秒】！");
+  expect(shared.text).toContain("🐚＼ 法螺貝、何秒吹ける？ ／🐚");
   expect(shared.text).toContain(
-    await page.locator("#share-view").getAttribute("data-glyphs"),
+    "#ぶおー法螺貝道場\n#依田芳乃\n#シンデレラガール総選挙2026",
   );
   expect(downloads).toBe(0);
   expect(context.pages()).toHaveLength(1);
