@@ -813,6 +813,11 @@ button:not(:disabled):active,
   border-color: #e2d5c5;
   background: #f3eee5;
 }
+.result-share-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
 .share-button {
   display: flex;
   align-items: center;

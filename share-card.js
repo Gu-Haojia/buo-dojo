@@ -100,7 +100,12 @@ function sparkle(ctx, x, y, radius, color) {
   ctx.fill();
 }
 
-function drawGlyphs(ctx, glyphs, mastery) {
+function drawGlyphs(
+  ctx,
+  glyphs,
+  mastery,
+  { areaTop = 472, areaHeight = 290, maxTile = 120 } = {},
+) {
   const columns =
     glyphs.length <= 4
       ? glyphs.length
@@ -112,11 +117,11 @@ function drawGlyphs(ctx, glyphs, mastery) {
   const rows = Math.ceil(glyphs.length / columns);
   const gap = 10;
   const tile = Math.min(
-    120,
+    maxTile,
     (600 - (columns - 1) * gap) / columns,
-    (290 - (rows - 1) * gap) / rows,
+    (areaHeight - (rows - 1) * gap) / rows,
   );
-  const top = 472 + (290 - (rows * tile + (rows - 1) * gap)) / 2;
+  const top = areaTop + (areaHeight - (rows * tile + (rows - 1) * gap)) / 2;
   for (let i = 0; i < glyphs.length; i++) {
     const row = Math.floor(i / columns);
     const inRow = Math.min(columns, glyphs.length - row * columns);
@@ -151,12 +156,126 @@ function drawGlyphs(ctx, glyphs, mastery) {
   }
 }
 
+/** Fixed X link card, exported ahead of deployment using the result-card artwork. */
+export async function renderLinkPreview() {
+  const glyphs = ["武", "謳", "鶯", "王"];
+  const [logo, character, fonts] = await Promise.all([
+    loadImage("./assets/title-logo-transparent.png"),
+    loadImage("./assets/character A.PNG"),
+    document.fonts.load('700 80px "Dojo Kanji"', glyphs.join("")),
+  ]);
+  if (!fonts.length) throw new Error("Game font unavailable");
+  const canvas = document.createElement("canvas");
+  canvas.width = 1200;
+  canvas.height = 630;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas unavailable");
+  ctx.fillStyle = colors.paper;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (let x = 0; x < 1200; x += 40) {
+    ctx.fillStyle = x % 80 ? "#e9d6b6" : "#acd9d6";
+    ctx.fillRect(x, 0, 22, 10);
+    ctx.fillRect(x, 620, 22, 10);
+  }
+
+  ctx.fillStyle = "#edf3e9";
+  ctx.beginPath();
+  ctx.ellipse(950, 298, 212, 236, -0.12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#d4bc8199";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(952, 300, 206, 243, 0.3, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([7, 12]);
+  ctx.strokeStyle = "#9ecabc";
+  ctx.beginPath();
+  ctx.ellipse(948, 297, 224, 223, -0.28, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  flower(ctx, 751, 62, 15, "#d98d77", 0.2);
+  flower(ctx, 1150, 508, 18, "#d5ad61", -0.2);
+  sparkle(ctx, 1122, 131, 22, "#d2a65a");
+  sparkle(ctx, 751, 260, 15, "#d2a65a");
+  sparkle(ctx, 1138, 412, 17, "#d2a65a");
+  ctx.drawImage(logo, 67, 76, 2058, 541, 55, 40, 651, 171);
+
+  ctx.save();
+  ctx.shadowColor = "#70533618";
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 8;
+  box(ctx, 48, 234, 674, 268, 30, "#fffefa");
+  ctx.restore();
+  box(ctx, 48, 234, 674, 268, 30, null, colors.line);
+  drawGlyphs(ctx, glyphs, false, {
+    areaTop: 264,
+    areaHeight: 148,
+    maxTile: 138,
+  });
+  text(
+    ctx,
+    "スマホで遊べる法螺貝ゲーム",
+    385,
+    461,
+    25,
+    colors.teal,
+    sans,
+    700,
+    "center",
+  );
+
+  const height = 492;
+  const width = (height * 771) / 1123;
+  ctx.save();
+  ctx.shadowColor = "#49796724";
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 9;
+  ctx.drawImage(
+    character,
+    426,
+    157,
+    771,
+    1123,
+    948 - width / 2,
+    32,
+    width,
+    height,
+  );
+  ctx.restore();
+  box(ctx, 48, 545, 1104, 43, 21, colors.teal);
+  text(
+    ctx,
+    "スマホにふーっと！そなたも挑戦 →",
+    600,
+    568,
+    24,
+    "#fffaf3",
+    sans,
+    700,
+    "center",
+  );
+  text(
+    ctx,
+    "非公式ファンゲーム · THE IDOLM@STER™ & ©Bandai Namco Entertainment Inc.",
+    600,
+    605,
+    12,
+    "#947969",
+    sans,
+    400,
+    "center",
+  );
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(
+      (blob) =>
+        blob ? resolve(blob) : reject(new Error("Image export failed")),
+      "image/png",
+    ),
+  );
+}
+
 /** Render locally; the image contains only the completed round and public art. */
-export async function renderShareCard(
-  result,
-  pose = "A",
-  pageUrl = location.href,
-) {
+export async function renderShareCard(result, pose = "A") {
   if (!["A", "B"].includes(pose) || !result.glyphs.length)
     throw new TypeError("Invalid share card");
   const glyphText = result.glyphs.join("");
@@ -282,18 +401,16 @@ export async function renderShareCard(
   }
 
   box(ctx, 48, 827, 1104, 43, 21, colors.teal);
-  text(ctx, "スマホにふーっと！そなたも挑戦 →", 72, 850, 24, "#fffaf3");
-  const url = new URL("./", pageUrl);
   text(
     ctx,
-    `${url.host}${url.pathname}`,
-    1125,
+    "スマホにふーっと！そなたも挑戦 →",
+    600,
     850,
-    21,
+    24,
     "#fffaf3",
     sans,
-    500,
-    "right",
+    700,
+    "center",
   );
   text(
     ctx,

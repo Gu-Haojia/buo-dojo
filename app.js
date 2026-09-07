@@ -573,7 +573,8 @@ $("again-button").addEventListener("click", () => {
 $("result-close").addEventListener("click", () =>
   hideModal($("result-dialog")),
 );
-$("share-button").addEventListener("click", resultSharing.show);
+$("share-button").addEventListener("click", resultSharing.share);
+$("share-preview-button").addEventListener("click", resultSharing.show);
 $("help-button").addEventListener("click", () => {
   if (["blowing", "celebrating"].includes(state)) {
     interruptRound();

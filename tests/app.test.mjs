@@ -217,7 +217,7 @@ test("demo: exact glyph order, release, replay, share, and official Yoshino voti
         shared = text;
       },
     };
-    await env.$("share-button").emit("click");
+    await env.$("share-preview-button").emit("click");
     assert.equal(env.$("result-dialog").dataset.view, "share");
     await env.$("share-copy-text").emit("click");
     assert.match(shared, /【おためし】2.5秒/);
@@ -275,7 +275,7 @@ test("demo caps at 25 seconds, celebrates, preserves the drawn order, and reshuf
         shared = text;
       },
     };
-    await env.$("share-button").emit("click");
+    await env.$("share-preview-button").emit("click");
     await env.$("share-copy-text").emit("click");
     assert.ok(shared.includes(`「${first.join("")}」`));
     assert.match(shared, /【おためし】【皆伝】/);
@@ -291,7 +291,7 @@ test("demo caps at 25 seconds, celebrates, preserves the drawn order, and reshuf
     assert.deepEqual(second.slice(0, 4), first.slice(0, 4));
     assert.equal(new Set(second).size, 31);
     assert.notDeepEqual(second.slice(4), first.slice(4));
-    await env.$("share-button").emit("click");
+    await env.$("share-preview-button").emit("click");
     await env.$("share-copy-text").emit("click");
     assert.ok(shared.includes(`「${second.join("")}」`));
   } finally {
@@ -370,7 +370,7 @@ test("X sharing offers selectable post text when the clipboard is unavailable", 
     await env.$("hold-button").emit("pointerdown", { button: 0, pointerId: 1 });
     env.setClock(1200);
     await env.$("hold-button").emit("pointerup", { pointerId: 1 });
-    await env.$("share-button").emit("click");
+    await env.$("share-preview-button").emit("click");
     const intent = new URL(env.$("share-web").href);
     assert.equal(intent.origin, "https://x.com");
     assert.match(intent.searchParams.get("text"), /武謳/);

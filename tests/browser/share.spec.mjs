@@ -99,9 +99,51 @@ async function finish(page, duration = 25000) {
 }
 
 async function openCard(page) {
-  await page.locator("#share-button").click();
+  await page.locator("#share-preview-button").click();
   await expect(page.locator("#share-image")).toBeVisible();
 }
+
+test("link cards are available to crawlers without JavaScript and reference a deployed PNG", async ({
+  browser,
+  request,
+}) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    await page.goto("http://localhost:4173/");
+    const canonical = await page
+      .locator('link[rel="canonical"]')
+      .getAttribute("href");
+    const imageUrl = await page
+      .locator('meta[property="og:image"]')
+      .getAttribute("content");
+    await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
+      "content",
+      "summary_large_image",
+    );
+    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute(
+      "content",
+      imageUrl,
+    );
+    await expect(
+      page.locator('meta[name="twitter:image:alt"]'),
+    ).toHaveAttribute("content", /武・謳・鶯・王/);
+    expect(imageUrl.startsWith(canonical)).toBe(true);
+    expect(new URL(imageUrl).protocol).toBe("https:");
+    const response = await request.get(
+      imageUrl.replace(canonical, "http://localhost:4173/"),
+    );
+    expect(response.ok()).toBe(true);
+    expect(response.headers()["content-type"]).toContain("image/png");
+    const png = await response.body();
+    expect([...png.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    expect(png.readUInt32BE(16)).toBe(1200);
+    expect(png.readUInt32BE(20)).toBe(630);
+    expect(png.length).toBeLessThan(1000000);
+  } finally {
+    await context.close();
+  }
+});
 
 test("card exports the exact round, full kanji list, and a stable random A/B pose", async ({
   page,
@@ -179,14 +221,13 @@ test("mobile shares a real PNG and caption inside the tap activation; cancellati
 }) => {
   await prepare(page, { mobile: true });
   await finish(page);
-  await openCard(page);
-  await expect(page.locator("#share-native")).toBeVisible();
+  await expect(page.locator("#share-image")).toHaveAttribute("src", /^blob:/);
   let downloads = 0;
   page.on("download", () => downloads++);
   await page.evaluate(() => {
     window.__shareError = "AbortError";
   });
-  await page.locator("#share-native").click();
+  await page.locator("#share-button").click();
   await expect(page.locator("#share-native")).toBeEnabled();
   const [shared] = await page.evaluate(() => window.__shared);
   expect(shared).toMatchObject({
@@ -202,22 +243,23 @@ test("mobile shares a real PNG and caption inside the tap activation; cancellati
   expect(downloads).toBe(0);
   expect(context.pages()).toHaveLength(1);
   expect(await page.evaluate(() => window.__copied)).toEqual([]);
-  await expect(page.locator("#share-native")).toBeVisible();
+  await expect(page.locator("#result-dialog")).toHaveAttribute(
+    "data-view",
+    "result",
+  );
 
   await page.evaluate(() => {
     window.__shareError = "NotAllowedError";
   });
-  await page.locator("#share-native").click();
+  await page.locator("#share-button").click();
   await expect(page.locator("#share-native")).toBeHidden();
   await expect(page.locator("#share-web")).toHaveClass(/x-post-button/);
-  await expect(page.locator("#share-note")).toContainText(
-    "画像を保存してXで添付",
-  );
+  await expect(page.locator("#share-note")).toContainText("リンクつきでシェア");
   expect(downloads).toBe(0);
   expect(context.pages()).toHaveLength(1);
 });
 
-test("desktop X action saves the PNG and opens a correctly encoded draft without posting", async ({
+test("desktop X action opens a link draft directly without downloading or opening the result-image view", async ({
   page,
   context,
 }) => {
@@ -229,27 +271,29 @@ test("desktop X action saves the PNG and opens a correctly encoded draft without
   );
   await prepare(page);
   await finish(page, 1200);
-  await openCard(page);
-  await expect(page.locator("#share-native")).toBeHidden();
+  await expect(page.locator("#share-image")).toHaveAttribute("src", /^blob:/);
+  let downloads = 0;
+  page.on("download", () => downloads++);
   const expectedText = new URL(
     await page.locator("#share-web").getAttribute("href"),
   ).searchParams.get("text");
   const popupReady = page.waitForEvent("popup");
-  const downloadReady = page.waitForEvent("download");
-  await page.locator("#share-web").click();
+  await page.locator("#share-button").click();
   const popup = await popupReady;
-  const download = await downloadReady;
   await popup.waitForLoadState();
   const url = new URL(popup.url());
   expect(url.origin).toBe("https://x.com");
-  expect(url.pathname).toBe("/intent/tweet");
+  expect(url.pathname).toBe("/intent/post");
   expect(url.searchParams.get("text")).toBe(expectedText);
   expect(url.searchParams.get("lang")).toBe("ja");
-  expect(download.suggestedFilename()).toBe(
-    await page.locator("#share-download").getAttribute("download"),
+  expect(downloads).toBe(0);
+  await expect(page.locator("#result-dialog")).toHaveAttribute(
+    "data-view",
+    "result",
   );
-  expect(download.suggestedFilename()).toMatch(/buo-dojo-\d+ms-2moji\.png/);
+  expect(await page.evaluate(() => window.__shared)).toEqual([]);
   await popup.close();
+  await openCard(page);
   await page.locator("#share-copy-text").click();
   await page.locator("#share-copy-image").click();
   const copied = await page.evaluate(() => window.__copied);
@@ -262,7 +306,7 @@ test("a late export from a previous round cannot replace the replay card", async
 }) => {
   await prepare(page, { delayed: true });
   await finish(page, 1200);
-  await page.locator("#share-button").click();
+  await page.locator("#share-preview-button").click();
   await expect
     .poll(() => page.evaluate(() => Boolean(window.__releaseCard)))
     .toBe(true);
@@ -295,7 +339,7 @@ test("image export failure keeps the X draft available and retry keeps the same 
 }) => {
   await prepare(page, { failExport: true });
   await finish(page, 7000);
-  await page.locator("#share-button").click();
+  await page.locator("#share-preview-button").click();
   await expect(page.locator("#share-retry")).toBeVisible();
   const intent = await page.locator("#share-web").getAttribute("href");
   expect(new URL(intent).searchParams.get("text")).toContain("7.0秒");

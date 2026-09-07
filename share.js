@@ -22,9 +22,7 @@ export function createResultSharing() {
   function readyControls(native) {
     $("share-native").hidden = !native;
     $("share-web").classList.toggle("x-post-button", !native);
-    $("share-web").textContent = native
-      ? "Xの投稿画面を開く"
-      : "画像を保存してXへ";
+    $("share-web").textContent = "Xの投稿画面を開く";
     $("share-copy-image").hidden = !(
       globalThis.ClipboardItem && navigator.clipboard?.write
     );
@@ -33,7 +31,7 @@ export function createResultSharing() {
     note(
       native
         ? "共有メニューで「X」を選んでください。"
-        : "保存した画像を、Xの投稿画面に添付してください。",
+        : "リンクには「武・謳・鶯・王」の画像が表示されます。本日の結果画像は、保存やコピーで添付できます。",
     );
   }
 
@@ -56,11 +54,7 @@ export function createResultSharing() {
     $("share-status").hidden = false;
     $("share-retry").hidden = true;
     try {
-      const blob = await renderShareCard(
-        target.result,
-        target.pose,
-        location.href,
-      );
+      const blob = await renderShareCard(target.result, target.pose);
       if (token !== revision || current !== target) return;
       const file = new File(
         [blob],
@@ -106,7 +100,7 @@ export function createResultSharing() {
     $("share-download").hidden = true;
     $("share-copy-image").hidden = true;
     $("share-fallback").hidden = true;
-    const intent = new URL("https://x.com/intent/tweet");
+    const intent = new URL("https://x.com/intent/post");
     intent.searchParams.set("text", current.text);
     intent.searchParams.set("lang", "ja");
     $("share-web").href = intent.href;
@@ -127,12 +121,12 @@ export function createResultSharing() {
     $("result-dialog").dataset.view = "result";
     $("result-dialog").setAttribute("aria-labelledby", "result-title");
     $("result-dialog").scrollTop = 0;
-    $("share-button").focus({ preventScroll: true });
+    $("share-preview-button").focus({ preventScroll: true });
   });
   $("share-retry").addEventListener("click", () => {
     if (current) void generate(current);
   });
-  $("share-native").addEventListener("click", async () => {
+  async function shareNative() {
     const target = current;
     if (!target?.file || sharing) return;
     sharing = true;
@@ -141,11 +135,12 @@ export function createResultSharing() {
       // Already-rendered File: call share synchronously in the tap activation.
       await navigator.share({ files: [target.file], text: target.text });
     } catch (error) {
-      if (current === target && error.name !== "AbortError") {
+      if (current === target && error?.name !== "AbortError") {
         target.native = false;
         readyControls(false);
+        show();
         note(
-          "この環境では画像を直接共有できません。画像を保存してXで添付してください。",
+          "画像を直接共有できませんでした。「Xの投稿画面を開く」からリンクつきでシェアできます。",
         );
       }
     } finally {
@@ -154,15 +149,14 @@ export function createResultSharing() {
         $("share-native").disabled = false;
       }
     }
-  });
-  $("share-web").addEventListener("click", () => {
-    if (current?.file && !current.native) {
-      $("share-download").click();
-      note("保存した画像を、Xの「画像を追加」から添付してください。");
-    } else if (current?.file) {
-      note("「画像を保存」で保存したカードを、Xの投稿画面で添付してください。");
-    }
-  });
+  }
+  function share() {
+    if (!current || sharing) return;
+    if (current.native) return shareNative();
+    // X reads the public page's fixed card; no local PNG attachment is needed.
+    window.open($("share-web").href, "_blank", "noopener,noreferrer");
+  }
+  $("share-native").addEventListener("click", shareNative);
   $("share-copy-image").addEventListener("click", async () => {
     const target = current;
     if (!target?.file) return;
@@ -192,5 +186,5 @@ export function createResultSharing() {
       note("投稿文を長押ししてコピーしてください。");
     }
   });
-  return { prepare, show };
+  return { prepare, show, share };
 }
