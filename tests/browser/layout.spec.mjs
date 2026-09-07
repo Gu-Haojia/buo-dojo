@@ -37,7 +37,8 @@ test("every game kanji renders from the bundled font without system fallback", a
     });
     expect(fonts, glyphs[i]).toHaveLength(1);
     expect(fonts[0], glyphs[i]).toMatchObject({
-      familyName: "Dojo Kanji",
+      // Chromium's Linux renderer may append its Fontations backend name.
+      familyName: expect.stringMatching(/^Dojo Kanji(?: \(Fontations\))?$/),
       isCustomFont: true,
       glyphCount: 1,
     });
