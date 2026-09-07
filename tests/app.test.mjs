@@ -100,8 +100,11 @@ async function setup() {
         fftSize: 2048,
         frequencyBinCount: 1024,
         disconnect() {},
-        getFloatTimeDomainData: (array) => array.fill(0),
-        getFloatFrequencyData: (array) => array.fill(-100),
+        getFloatTimeDomainData: (array) => {
+          for (let i = 0; i < array.length; i++)
+            array[i] = window.wind ? 0.06 * Math.sin(i) : 0;
+        },
+        getFloatFrequencyData: (array) => array.fill(window.wind ? -35 : -100),
       };
     }
   }
@@ -119,9 +122,9 @@ async function setup() {
       return id;
     },
     cancelAnimationFrame: (id) => frames.delete(id),
-    setTimeout: (callback) => {
+    setTimeout: (callback, delay = 0) => {
       const id = ++nextId;
-      timers.set(id, callback);
+      timers.set(id, { callback, due: clock + delay });
       return id;
     },
     clearTimeout: (id) => timers.delete(id),
@@ -158,6 +161,15 @@ async function setup() {
       frames.clear();
       pending.forEach((callback) => callback(value));
     },
+    runTimers(ms) {
+      clock += ms;
+      for (const [id, timer] of [...timers]) {
+        if (timer.due <= clock && timers.has(id)) {
+          timers.delete(id);
+          timer.callback();
+        }
+      }
+    },
     restore() {
       for (const [key, descriptor] of originals) {
         if (descriptor) Object.defineProperty(globalThis, key, descriptor);
@@ -186,11 +198,11 @@ test("demo: exact glyph order, release, replay, share, and official Yoshino voti
     assert.equal(env.state, "demo-ready");
     await env.$("hold-button").emit("pointerdown", { button: 0, pointerId: 1 });
     assert.equal(env.state, "blowing");
-    env.tick(3500);
+    env.tick(2500);
     await env.$("hold-button").emit("pointerup", { pointerId: 1 });
     assert.equal(env.state, "result");
     assert.equal(env.$("result-dialog").open, true);
-    assert.equal(env.$("result-time").textContent, "3.5");
+    assert.equal(env.$("result-time").textContent, "2.5");
     assert.deepEqual(
       env.$("result-kanji").children.map((tile) => tile.textContent),
       ["武", "謳", "鶯", "王"],
@@ -203,7 +215,7 @@ test("demo: exact glyph order, release, replay, share, and official Yoshino voti
       },
     };
     await env.$("share-button").emit("click");
-    assert.match(shared, /【おためし】3.5秒/);
+    assert.match(shared, /【おためし】2.5秒/);
     assert.match(shared, /https:\/\/sample.github.io\/yoshino\//);
     assert.equal(
       env.$("vote-button").href,
@@ -218,25 +230,39 @@ test("demo: exact glyph order, release, replay, share, and official Yoshino voti
   }
 });
 
-test("demo caps at 30 seconds, preserves the drawn order, and reshuffles on replay", async (t) => {
+test("demo caps at 25 seconds, celebrates, preserves the drawn order, and reshuffles on replay", async (t) => {
   const env = await setup();
   const random = t.mock.method(Math, "random", () => 0);
   try {
     await env.$("demo-button").emit("click");
     await env.$("hold-button").emit("keydown", { key: "Enter", repeat: false });
-    env.tick(31000);
+    env.tick(20000);
+    assert.equal(env.$("live-count").textContent, "30");
+    assert.equal(env.$("charge-cue").hidden, false);
+    env.tick(24999);
+    assert.equal(env.$("live-count").textContent, "30");
+    env.tick(25000);
+    assert.equal(env.state, "celebrating");
+    assert.equal(env.$("finale-effect").hidden, false);
+    assert.equal(env.frames.size, 0);
+    env.runTimers(1800);
     assert.equal(env.state, "result");
-    assert.equal(env.$("result-time").textContent, "30.0");
+    assert.equal(env.$("result-time").textContent, "25.0");
     assert.equal(env.$("result-count").textContent, "31");
     assert.equal(env.frames.size, 0);
-    const resultGlyphs = () =>
-      env.$("result-kanji").children.map((tile) => tile.textContent);
+    const resultGlyphs = () => [
+      ...env.$("result-kanji").children.map((tile) => tile.textContent),
+      env.$("result-final-kanji").textContent,
+    ];
     const first = resultGlyphs();
     assert.deepEqual(first.slice(0, 4), ["武", "謳", "鶯", "王"]);
     assert.equal(new Set(first).size, 31);
+    assert.equal(first.at(-1), "芳");
+    assert.equal(env.$("result-dialog").dataset.mastery, "true");
+    assert.equal(env.$("result-stamp").textContent, "皆伝");
     assert.deepEqual(
       env.$("particles").children.map((particle) => particle.textContent),
-      first,
+      first.slice(0, 30),
     );
     let shared = "";
     env.navigator.clipboard = {
@@ -246,11 +272,14 @@ test("demo caps at 30 seconds, preserves the drawn order, and reshuffles on repl
     };
     await env.$("share-button").emit("click");
     assert.ok(shared.includes(`「${first.join("")}」`));
+    assert.match(shared, /【おためし】【皆伝】/);
 
     await env.$("again-button").emit("click");
     random.mock.mockImplementation(() => 0.999999);
     await env.$("hold-button").emit("keydown", { key: "Enter", repeat: false });
-    env.tick(62000);
+    env.tick(52800);
+    assert.equal(env.state, "celebrating");
+    env.runTimers(1800);
     const second = resultGlyphs();
     assert.equal(env.state, "result");
     assert.deepEqual(second.slice(0, 4), first.slice(0, 4));
@@ -350,6 +379,103 @@ test("native share cancellation has no clipboard side effect; unavailable clipbo
     await env.$("share-button").emit("click");
     assert.equal(env.$("share-fallback").hidden, false);
     assert.match(env.$("share-fallback").value, /武謳/);
+  } finally {
+    env.restore();
+  }
+});
+
+for (const duration of [20000, 24999]) {
+  test(`ending at ${duration}ms gives ordinary results with 30 glyphs`, async () => {
+    const env = await setup();
+    try {
+      await env.$("demo-button").emit("click");
+      await env
+        .$("hold-button")
+        .emit("pointerdown", { button: 0, pointerId: 1 });
+      env.tick(duration);
+      await env.$("hold-button").emit("pointerup", { pointerId: 1 });
+      assert.equal(env.state, "result");
+      assert.equal(env.$("result-count").textContent, "30");
+      assert.equal(
+        env.$("result-time").textContent,
+        duration === 20000 ? "20.0" : "24.9",
+      );
+      assert.equal(env.$("result-dialog").dataset.mastery, "false");
+      assert.equal(env.$("mastery-award").hidden, true);
+      assert.equal(env.$("finale-effect").hidden, true);
+      assert.equal(env.$("charge-cue").hidden, true);
+    } finally {
+      env.restore();
+    }
+  });
+}
+
+test("the microphone stops at 25 seconds before the celebration and results", async () => {
+  const env = await setup();
+  try {
+    const fixture = streamFixture();
+    env.navigator.mediaDevices = { getUserMedia: async () => fixture.stream };
+    await env.$("start-button").emit("click");
+    env.tick(0);
+    env.tick(800);
+    env.window.wind = true;
+    env.tick(1000);
+    env.tick(1200);
+    env.tick(21000);
+    assert.equal(env.$("charge-cue").hidden, false);
+    env.tick(26000);
+    assert.equal(env.state, "celebrating");
+    assert.equal(fixture.track.stopped, true);
+    assert.equal(env.contexts[0].state, "closed");
+    assert.equal(env.frames.size, 0);
+    env.runTimers(1800);
+    assert.equal(env.state, "result");
+    assert.equal(env.$("result-time").textContent, "25.0");
+    assert.equal(env.$("result-final-kanji").textContent, "芳");
+  } finally {
+    env.restore();
+  }
+});
+
+test("backgrounding a celebration settles once and cannot overwrite a replay", async () => {
+  const env = await setup();
+  try {
+    await env.$("demo-button").emit("click");
+    await env.$("hold-button").emit("keydown", { key: "Enter" });
+    env.tick(25000);
+    assert.equal(env.state, "celebrating");
+    env.document.hidden = true;
+    await env.document.emit("visibilitychange");
+    assert.equal(env.state, "result");
+    env.document.hidden = false;
+    await env.$("again-button").emit("click");
+    assert.equal(env.$("dojo").dataset.phase, "regular");
+    env.runTimers(2000);
+    assert.equal(env.state, "demo-ready");
+    assert.equal(env.$("result-dialog").open, false);
+    await env.$("hold-button").emit("keydown", { key: "Enter" });
+    env.tick(29000);
+    await env.$("hold-button").emit("keyup", { key: "Enter" });
+    assert.equal(env.$("result-dialog").dataset.mastery, "false");
+    assert.equal(env.$("mastery-award").hidden, true);
+  } finally {
+    env.restore();
+  }
+});
+
+test("pagehide on the exact completion boundary settles without a stranded celebration", async () => {
+  const env = await setup();
+  try {
+    await env.$("demo-button").emit("click");
+    await env.$("hold-button").emit("keydown", { key: "Enter" });
+    env.tick(24900);
+    env.setClock(25000);
+    await env.window.emit("pagehide");
+    assert.equal(env.state, "result");
+    assert.equal(env.$("result-dialog").open, true);
+    assert.equal(env.$("result-dialog").dataset.mastery, "true");
+    env.runTimers(2000);
+    assert.equal(env.state, "result");
   } finally {
     env.restore();
   }

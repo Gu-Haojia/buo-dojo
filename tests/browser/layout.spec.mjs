@@ -175,18 +175,21 @@ for (const viewport of [
     await page.getByRole("button", { name: "マイクなしでおためし" }).click();
     await page.locator("#hold-button").focus();
     await page.keyboard.down("Space");
-    await page.clock.fastForward(31000);
+    await page.clock.fastForward(25000);
+    await page.clock.runFor(2000);
     await page.keyboard.up("Space");
     await expect(page.locator("#result-dialog")).toBeVisible();
-    await expect(page.locator("#result-kanji > span")).toHaveCount(31);
+    await expect(page.locator("#result-kanji > span")).toHaveCount(30);
+    await expect(page.locator("#result-final-kanji")).toHaveText("芳");
     await page.clock.runFor(600);
     const dimensions = await page
       .locator("#result-kanji")
       .evaluate((element) => {
         const dialog = document.querySelector("#result-dialog");
-        const boxes = [...element.children].map((tile) =>
-          tile.getBoundingClientRect(),
-        );
+        const boxes = [
+          ...element.children,
+          document.querySelector("#result-final-kanji"),
+        ].map((tile) => tile.getBoundingClientRect());
         return {
           clientHeight: element.clientHeight,
           scrollHeight: element.scrollHeight,
@@ -216,3 +219,48 @@ for (const viewport of [
       );
   });
 }
+
+test("charging and the final animation keep the stage fixed before mastery results", async ({
+  page,
+}) => {
+  await prepare(page, { width: 393, height: 640 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.getByRole("button", { name: "マイクなしでおためし" }).click();
+  await page.locator("#hold-button").focus();
+  await page.keyboard.down("Space");
+  const stage = await page.locator(".stage").boundingBox();
+  await page.clock.fastForward(20000);
+  await expect(page.locator("#live-count")).toHaveText("30");
+  await expect(page.locator("#dojo")).toHaveAttribute("data-phase", "charging");
+  await expect(page.locator("#charge-cue")).toBeVisible();
+  await page.clock.fastForward(4500);
+  await expect(page.locator("#live-count")).toHaveText("30");
+  await page.clock.runFor(600);
+  await expect(page.locator("#dojo")).toHaveAttribute(
+    "data-state",
+    "celebrating",
+  );
+  await expect(page.locator("#finale-effect")).toBeVisible();
+  await expect(page.locator("#finale-kanji")).toHaveText("芳");
+  await expect(page.locator("#result-dialog")).not.toBeVisible();
+  expect(await page.locator(".stage").boundingBox()).toEqual(stage);
+  await page.keyboard.up("Space");
+  await page.clock.runFor(1900);
+  await expect(page.locator("#result-dialog")).toHaveAttribute(
+    "data-mastery",
+    "true",
+  );
+  await expect(page.locator("#result-stamp")).toHaveText("皆伝");
+  await expect(page.locator("#result-time")).toHaveText("25.0");
+  await page.locator("#again-button").click();
+  await page.keyboard.down("Space");
+  await page.clock.fastForward(20000);
+  await page.keyboard.up("Space");
+  await expect(page.locator("#result-dialog")).toHaveAttribute(
+    "data-mastery",
+    "false",
+  );
+  await expect(page.locator("#result-kanji > span")).toHaveCount(30);
+  await expect(page.locator("#mastery-award")).not.toBeVisible();
+  await expect(page.locator("#result-overline")).toHaveText("本日の、ひと吹き");
+});

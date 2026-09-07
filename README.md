@@ -9,7 +9,8 @@
 - 日语界面，优先适配手机竖屏。
 - 点击「法螺貝を吹く」，允许使用麦克风，等待环境音校准后开始吹气。
 - 起吹后依次出现「武、謳、鶯、王」，随后从 32 个候选汉字中随机抽取，每局重新打乱顺序。
-- 每秒出现一个汉字，单次最多 30 秒；完整一局最多出现 31 个不同的字。
+- 前 20 秒出现 30 个汉字，随后进入 5 秒蓄力阶段；单次最多 25 秒。
+- 达到 25 秒后吹出最后一字「芳」，获得专属动画、字徽章与「皆伝」结算，完整一局共 31 字。提前结束则显示普通结算。
 - 吹气结束后查看汉字列表和持续时间，可再次游玩、分享结果或前往芳乃的官方投票页面。
 - 无法使用麦克风时，可选择「マイクなしでおためし」长按试玩；键盘支持空格和 Enter。
 
@@ -36,13 +37,13 @@ npm run dev
 
 ## 开发命令
 
-| 命令 | 用途 |
-| --- | --- |
-| `npm run dev` | 启动开发服务器，默认端口为 4173 |
-| `npm run check` | 检查 JavaScript 语法 |
-| `npm test` | 运行游戏逻辑与交互测试 |
-| `npm run test:layout` | 运行浏览器布局测试 |
-| `npm run build` | 将网站与资源打包至 `dist/` |
+| 命令                  | 用途                            |
+| --------------------- | ------------------------------- |
+| `npm run dev`         | 启动开发服务器，默认端口为 4173 |
+| `npm run check`       | 检查 JavaScript 语法            |
+| `npm test`            | 运行游戏逻辑与交互测试          |
+| `npm run test:layout` | 运行浏览器布局测试              |
+| `npm run build`       | 将网站与资源打包至 `dist/`      |
 
 运行布局测试前，安装测试所需的浏览器：
 
@@ -74,14 +75,16 @@ Linux 环境可使用 `npx playwright install --with-deps chromium` 安装浏览
 
 主要设置位于 [`config.js`](config.js)：
 
-| 配置项 | 默认值 | 说明 |
-| --- | --- | --- |
-| `voteUrl` | [依田芳乃官方投票页](https://idolmaster-official.jp/cinderellagirls/vote2026/vote/idol/yorita_yoshino) | 投票按钮的跳转地址，设为空字符串可关闭入口 |
-| `shareHashtags` | `ぶおー法螺貝道場`、`依田芳乃` | 分享结果使用的话题标签 |
-| `maxBlowSeconds` | `30` | 单次游戏的最长持续时间，单位为秒 |
-| `kanjiIntervalMs` | `1000` | 汉字出现间隔，单位为毫秒 |
+| 配置项                | 默认值                                                                                                 | 说明                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| `voteUrl`             | [依田芳乃官方投票页](https://idolmaster-official.jp/cinderellagirls/vote2026/vote/idol/yorita_yoshino) | 投票按钮的跳转地址，设为空字符串可关闭入口 |
+| `shareHashtags`       | `ぶおー法螺貝道場`、`依田芳乃`                                                                         | 分享结果使用的话题标签                     |
+| `regularGlyphCount`   | `30`                                                                                                   | 蓄力前出现的汉字总数，包含固定开头四字     |
+| `regularPhaseSeconds` | `20`                                                                                                   | 普通出字阶段的时长，单位为秒               |
+| `maxBlowSeconds`      | `25`                                                                                                   | 单次游戏的最长持续时间，单位为秒           |
+| `finalKanji`          | `芳`                                                                                                   | 达到时间上限后出现的奖励字                 |
 
-候选汉字位于 [`breath.js`](breath.js) 的 `O_KANJI` 中。开头四字是固定的趣味序列；后续候选具有「お／オ」读音，包括部分生僻字和表外读音。读音参考[漢字ペディア](https://www.kanjipedia.jp/sakuin/onkun/%E3%82%AA)与[漢字辞典音训索引](https://kanjitisiki.com/yomi-sakuin/05.html)。
+候选汉字位于 [`breath.js`](breath.js) 的 `O_KANJI` 中。开头四字是固定的趣味序列；后续普通候选具有「お／オ」读音，包括部分生僻字和表外读音。最终奖励字「芳」取自依田芳乃的名字，独立于普通字池。读音参考[漢字ペディア](https://www.kanjipedia.jp/sakuin/onkun/%E3%82%AA)与[漢字辞典音训索引](https://kanjitisiki.com/yomi-sakuin/05.html)。
 
 ## 部署
 

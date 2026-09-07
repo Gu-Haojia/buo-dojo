@@ -1,13 +1,20 @@
 import { CONFIG } from "./config.js";
-import { BreathDetector, analyzeSignal, createGlyphSequence } from "./breath.js";
+import {
+  BreathDetector,
+  analyzeSignal,
+  createGlyphSequence,
+  roundProgress,
+} from "./breath.js";
 
 const $ = (id) => document.getElementById(id);
+const secondsText = (ms) => (Math.floor(ms / 100) / 10).toFixed(1);
 const characters = [...document.querySelectorAll(".character")];
 const activeStates = [
   "requesting",
   "calibrating",
   "listening",
   "blowing",
+  "celebrating",
   "demo-ready",
 ];
 let state = "idle",
@@ -18,6 +25,7 @@ let state = "idle",
 let generation = 0,
   frameId = 0,
   hintTimer = 0,
+  finaleTimer = 0,
   toastTimer = 0;
 let holdPointer = null,
   holdKey = null,
@@ -26,23 +34,24 @@ let holdPointer = null,
 function setState(next) {
   state = next;
   $("dojo").dataset.state = next;
-  const pose =
-    next === "blowing"
-      ? "c"
-      : ["requesting", "calibrating", "listening", "demo-ready"].includes(next)
-        ? "b"
-        : "a";
+  const pose = ["blowing", "celebrating"].includes(next)
+    ? "c"
+    : ["requesting", "calibrating", "listening", "demo-ready"].includes(next)
+      ? "b"
+      : "a";
   for (const element of characters)
     element.hidden = !element.classList.contains(`character-${pose}`);
   const micLive =
     mode === "microphone" &&
     ["calibrating", "listening", "blowing"].includes(next);
   $("breath-meter").hidden = !micLive;
-  $("session-tools").hidden = !activeStates.includes(next);
+  $("session-tools").hidden =
+    !activeStates.includes(next) || next === "celebrating";
   $("sensitivity").hidden = !micLive;
   document.querySelector('label[for="sensitivity"]').hidden = !micLive;
   $("session-counter").hidden = ![
     "blowing",
+    "celebrating",
     "listening",
     "demo-ready",
   ].includes(next);
@@ -62,6 +71,7 @@ function setState(next) {
     "calibrating",
     "listening",
     "blowing",
+    "celebrating",
   ].includes(next);
   const copy = {
     idle: [
@@ -102,6 +112,12 @@ function setState(next) {
       `ひと吹きは${CONFIG.maxBlowSeconds}秒まで。無理せず、そなたのペースで。`,
       "",
     ],
+    celebrating: [
+      "お見事！皆伝です",
+      "皆伝！",
+      "最後のひと文字、届きましてー。",
+      "",
+    ],
   }[next];
   if (copy) {
     $("status-text").textContent = copy[0];
@@ -120,6 +136,7 @@ function stopResources() {
   generation++;
   cancelAnimationFrame(frameId);
   clearTimeout(hintTimer);
+  clearTimeout(finaleTimer);
   holdPointer = null;
   holdKey = null;
   const old = microphone;
@@ -139,6 +156,12 @@ function reset() {
   $("particles").replaceChildren();
   $("live-count").textContent = "0";
   $("live-time").textContent = "0.0";
+  $("dojo").dataset.phase = "regular";
+  $("dojo").style.setProperty("--charge", 0);
+  $("dojo").style.setProperty("--blow-speed", "0.72s");
+  $("charge-cue").hidden = true;
+  $("charge-orbit").hidden = true;
+  $("finale-effect").hidden = true;
   setState("idle");
 }
 
@@ -195,19 +218,43 @@ function spawnGlyph(glyph, index) {
 
 function advanceRound(elapsedMs) {
   if (!round) return;
-  round.elapsedMs = Math.min(
-    CONFIG.maxBlowSeconds * 1000,
-    Math.max(0, elapsedMs),
-  );
-  const targetCount = Math.floor(round.elapsedMs / CONFIG.kanjiIntervalMs) + 1;
-  while (round.glyphs.length < targetCount) {
+  const progress = roundProgress(Math.max(0, elapsedMs));
+  round.elapsedMs = progress.elapsedMs;
+  while (round.glyphs.length < progress.regularCount) {
     const index = round.glyphs.length,
       glyph = round.sequence.next().value;
     round.glyphs.push(glyph);
     spawnGlyph(glyph, index);
   }
+  if (progress.complete && round.glyphs.length === CONFIG.regularGlyphCount)
+    round.glyphs.push(CONFIG.finalKanji);
+  if (progress.charging) {
+    if ($("dojo").dataset.phase !== "charging") {
+      $("dojo").dataset.phase = "charging";
+      $("charge-cue").hidden = false;
+      $("charge-orbit").hidden = false;
+      $("status-text").textContent = "あとひと吹きー！";
+      $("button-note").textContent = "花がそろうと、最後のひと文字。";
+    }
+    $("dojo").style.setProperty("--charge", progress.charge);
+    $("dojo").style.setProperty(
+      "--blow-speed",
+      `${0.72 - progress.charge * 0.3}s`,
+    );
+    const remaining = Math.ceil(
+      (CONFIG.maxBlowSeconds * 1000 - round.elapsedMs) / 1000,
+    );
+    if (round.remaining !== remaining) {
+      round.remaining = remaining;
+      $("charge-remaining").textContent = String(remaining);
+      for (let i = 1; i <= 5; i++)
+        $(`charge-flower-${i}`).dataset.lit = String(
+          i <= Math.floor(progress.charge * 5) + 1,
+        );
+    }
+  }
   $("live-count").textContent = String(round.glyphs.length);
-  $("live-time").textContent = (round.elapsedMs / 1000).toFixed(1);
+  $("live-time").textContent = secondsText(round.elapsedMs);
 }
 
 function finishRound(elapsedMs = round?.elapsedMs, detail = "") {
@@ -217,21 +264,59 @@ function finishRound(elapsedMs = round?.elapsedMs, detail = "") {
     mode: round.mode,
     durationMs: round.elapsedMs,
     glyphs: [...round.glyphs],
+    mastery: roundProgress(round.elapsedMs).complete,
+    detail,
   };
   stopResources();
+  $("charge-cue").hidden = true;
+  $("charge-orbit").hidden = true;
+  if (lastResult.mastery) {
+    setState("celebrating");
+    $("finale-kanji").textContent = CONFIG.finalKanji;
+    $("finale-effect").hidden = false;
+    const token = generation;
+    const reducedMotion = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    finaleTimer = setTimeout(
+      () => {
+        if (generation === token && state === "celebrating") showResult();
+      },
+      reducedMotion ? 350 : 1800,
+    );
+  } else showResult();
+}
+
+function showResult() {
+  clearTimeout(finaleTimer);
+  $("finale-effect").hidden = true;
   setState("result");
+  $("result-dialog").dataset.mastery = String(lastResult.mastery);
+  $("result-overline").textContent = lastResult.mastery
+    ? "法螺貝道場・皆伝"
+    : "本日の、ひと吹き";
+  $("result-stamp").textContent = lastResult.mastery ? "皆伝" : "大変\nよき音";
+  $("mastery-award").hidden = !lastResult.mastery;
+  $("result-final-kanji").textContent = lastResult.mastery
+    ? CONFIG.finalKanji
+    : "";
   $("result-count").textContent = String(lastResult.glyphs.length);
-  $("result-time").textContent = (lastResult.durationMs / 1000).toFixed(1);
+  $("result-time").textContent = secondsText(lastResult.durationMs);
   $("result-mode").hidden = lastResult.mode !== "demo";
-  $("result-message").textContent =
-    lastResult.durationMs >= 10000
+  $("result-message").textContent = lastResult.mastery
+    ? "見事な、ひと吹きでしてー。"
+    : lastResult.durationMs >= 10000
       ? "遠くまで、届きましてー。"
       : "よき響きでしてー。";
-  $("result-detail").textContent = detail;
-  $("result-detail").hidden = !detail;
-  const glyphCount = lastResult.glyphs.length;
-  const columns =
-    glyphCount <= 4
+  $("result-detail").textContent = lastResult.detail;
+  $("result-detail").hidden = !lastResult.detail || lastResult.mastery;
+  const regularGlyphs = lastResult.mastery
+    ? lastResult.glyphs.slice(0, -1)
+    : lastResult.glyphs;
+  const glyphCount = regularGlyphs.length;
+  const columns = lastResult.mastery
+    ? 6
+    : glyphCount <= 4
       ? glyphCount
       : Math.min(8, Math.ceil(Math.sqrt(glyphCount * 1.8)));
   $("result-kanji").style.setProperty("--glyph-columns", columns);
@@ -240,7 +325,7 @@ function finishRound(elapsedMs = round?.elapsedMs, detail = "") {
     Math.ceil(glyphCount / columns),
   );
   $("result-kanji").replaceChildren(
-    ...lastResult.glyphs.map((glyph, index) => {
+    ...regularGlyphs.map((glyph, index) => {
       const tile = document.createElement("span");
       tile.textContent = glyph;
       tile.style.setProperty("--i", Math.min(index, 12));
@@ -385,7 +470,7 @@ async function startMicrophone() {
       if (event.type === "end") {
         finishRound(
           event.durationMs,
-          event.capped ? "30秒で終了しました。" : "",
+          event.capped ? `${CONFIG.maxBlowSeconds}秒で終了しました。` : "",
         );
         return;
       }
@@ -411,7 +496,7 @@ function startHold() {
     if (state !== "blowing" || mode !== "demo") return;
     advanceRound(now - round.startedAt);
     if (round.elapsedMs >= CONFIG.maxBlowSeconds * 1000) {
-      finishRound(round.elapsedMs, "30秒で終了しました。");
+      finishRound(round.elapsedMs);
       return;
     }
     frameId = requestAnimationFrame(tick);
@@ -427,7 +512,7 @@ function shareText() {
   const url = new URL("./", location.href);
   url.search = "";
   url.hash = "";
-  return `芳乃といっしょに、ぶおー！\n${lastResult.mode === "demo" ? "【おためし】" : ""}${(lastResult.durationMs / 1000).toFixed(1)}秒で「${lastResult.glyphs.join("")}」の${lastResult.glyphs.length}文字を奏でました。\n${CONFIG.shareHashtags.map((tag) => `#${tag}`).join(" ")}\n${url.href}`;
+  return `芳乃といっしょに、ぶおー！\n${lastResult.mode === "demo" ? "【おためし】" : ""}${lastResult.mastery ? `【皆伝】最後の一文字「${CONFIG.finalKanji}」まで！\n` : ""}${secondsText(lastResult.durationMs)}秒で「${lastResult.glyphs.join("")}」の${lastResult.glyphs.length}文字を奏でました。\n${CONFIG.shareHashtags.map((tag) => `#${tag}`).join(" ")}\n${url.href}`;
 }
 async function shareResult() {
   if (!lastResult) return;
@@ -457,7 +542,9 @@ function interruptRound() {
       mode === "demo" ? performance.now() - round.startedAt : round.elapsedMs,
       "画面を離れたため、ここまでの記録です。",
     );
-  else if (activeStates.includes(state)) reset();
+  else if (state !== "celebrating" && activeStates.includes(state)) reset();
+  // A round can reach the limit in the same event that backgrounds the page.
+  if (state === "celebrating") showResult();
 }
 
 $("start-button").addEventListener("click", startMicrophone);
@@ -513,7 +600,7 @@ $("result-close").addEventListener("click", () =>
 );
 $("share-button").addEventListener("click", shareResult);
 $("help-button").addEventListener("click", () => {
-  if (state === "blowing") {
+  if (["blowing", "celebrating"].includes(state)) {
     interruptRound();
     return;
   }
@@ -573,7 +660,10 @@ else {
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) interruptRound();
 });
-window.addEventListener("pagehide", stopResources);
+window.addEventListener("pagehide", () => {
+  interruptRound();
+  stopResources();
+});
 window.addEventListener("pageshow", (event) => {
   if (event.persisted && activeStates.includes(state)) reset();
 });

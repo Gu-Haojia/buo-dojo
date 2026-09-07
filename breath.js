@@ -1,4 +1,6 @@
-// The first four glyphs are the requested playful "ぶおー" sequence.
+import { CONFIG } from "./config.js";
+
+// The first four glyphs form the playful "ぶおー" opening sequence.
 // Following glyphs have the reading オ / お, including kun and uncommon readings.
 // Reading references: https://www.kanjipedia.jp/sakuin/onkun/%E3%82%AA
 // https://kanjitisiki.com/yomi-sakuin/05.html (the オ and お sections only).
@@ -50,19 +52,39 @@ export function* createGlyphSequence(random = Math.random) {
     yield* pool;
   }
 }
-export function glyphsForDuration(durationMs, intervalMs = 1000) {
-  if (
-    !Number.isFinite(durationMs) ||
-    durationMs < 0 ||
-    !Number.isFinite(intervalMs) ||
-    intervalMs <= 0
-  )
+export function roundProgress(durationMs) {
+  if (!Number.isFinite(durationMs) || durationMs < 0)
     throw new RangeError("Invalid duration");
+  const elapsedMs = Math.min(durationMs, CONFIG.maxBlowSeconds * 1000);
+  const regularMs = CONFIG.regularPhaseSeconds * 1000;
+  const complete = elapsedMs >= CONFIG.maxBlowSeconds * 1000;
+  return {
+    elapsedMs,
+    regularCount: Math.min(
+      CONFIG.regularGlyphCount,
+      Math.floor((elapsedMs * (CONFIG.regularGlyphCount - 1)) / regularMs) + 1,
+    ),
+    complete,
+    charging: elapsedMs >= regularMs && !complete,
+    charge: Math.max(
+      0,
+      Math.min(
+        1,
+        (elapsedMs - regularMs) / (CONFIG.maxBlowSeconds * 1000 - regularMs),
+      ),
+    ),
+  };
+}
+
+export function glyphsForDuration(durationMs) {
+  const progress = roundProgress(durationMs);
   const sequence = createGlyphSequence();
-  return Array.from(
-    { length: Math.floor(durationMs / intervalMs) + 1 },
+  const glyphs = Array.from(
+    { length: progress.regularCount },
     () => sequence.next().value,
   );
+  if (progress.complete) glyphs.push(CONFIG.finalKanji);
+  return glyphs;
 }
 
 export function analyzeSignal(samples, spectrum, sampleRate) {
@@ -109,7 +131,7 @@ export class BreathDetector {
     calibrationMs = 800,
     startHoldMs = 200,
     endSilenceMs = 750,
-    maxDurationMs = 30000,
+    maxDurationMs = CONFIG.maxBlowSeconds * 1000,
   } = {}) {
     Object.assign(this, {
       sensitivity,

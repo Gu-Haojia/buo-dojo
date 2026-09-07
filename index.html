@@ -129,6 +129,48 @@
           />
         </div>
         <div class="kanji-particles" id="particles" aria-hidden="true"></div>
+        <div class="charge-cue" id="charge-cue" hidden>
+          <span class="charge-caption">最後のひと吹き</span>
+          <div class="charge-flowers" aria-hidden="true">
+            <span id="charge-flower-1">✿</span
+            ><span id="charge-flower-2">✿</span>
+            <span id="charge-flower-3">✿</span
+            ><span id="charge-flower-4">✿</span>
+            <span id="charge-flower-5">✿</span>
+          </div>
+          <span class="charge-countdown"
+            >あと <strong id="charge-remaining">5</strong> 秒</span
+          >
+        </div>
+        <div class="charge-orbit" id="charge-orbit" aria-hidden="true" hidden>
+          <i style="--i: 0"></i><i style="--i: 1"></i><i style="--i: 2"></i>
+          <i style="--i: 3"></i><i style="--i: 4"></i><i style="--i: 5"></i>
+        </div>
+        <div class="finale-effect" id="finale-effect" aria-hidden="true" hidden>
+          <span class="finale-ripple"></span
+          ><span class="finale-ripple ripple-two"></span>
+          <span class="finale-kanji" id="finale-kanji">芳</span>
+          <span
+            class="finale-petal"
+            style="--x: -105px; --y: -86px; --r: -50deg"
+            >✿</span
+          >
+          <span class="finale-petal" style="--x: 108px; --y: -115px; --r: 65deg"
+            >✿</span
+          >
+          <span class="finale-petal" style="--x: -55px; --y: -155px; --r: 35deg"
+            >✧</span
+          >
+          <span class="finale-petal" style="--x: 145px; --y: -28px; --r: -25deg"
+            >✧</span
+          >
+          <span class="finale-petal" style="--x: -82px; --y: 40px; --r: 70deg"
+            >✧</span
+          >
+          <span class="finale-petal" style="--x: 88px; --y: 60px; --r: -65deg"
+            >✿</span
+          >
+        </div>
         <div class="session-counter" id="session-counter" hidden>
           <span id="live-count">0</span> 文字
           <span class="counter-divider">/</span>
@@ -201,7 +243,8 @@
       aria-labelledby="result-title"
     >
       <div class="result-top">
-        <span class="result-overline">本日の、ひと吹き</span
+        <span class="result-overline" id="result-overline"
+          >本日の、ひと吹き</span
         ><button
           class="round-button close-button"
           id="result-close"
@@ -211,18 +254,27 @@
         </button>
         <h2 id="result-title">お疲れさまでした</h2>
         <p id="result-message">よき響きでしてー。</p>
-        <div class="result-stamp" aria-hidden="true">大変<br />よき音</div>
+        <div class="result-stamp" id="result-stamp" aria-hidden="true">
+          大変<br />よき音
+        </div>
       </div>
       <div class="result-body">
         <div class="result-label">
           そなたが奏でた漢字
           <span><strong id="result-count">0</strong> 文字</span>
         </div>
-        <div
-          class="result-kanji"
-          id="result-kanji"
-          aria-label="今回吹き出した漢字"
-        ></div>
+        <div class="result-collection">
+          <div
+            class="result-kanji"
+            id="result-kanji"
+            aria-label="今回吹き出した漢字"
+          ></div>
+          <div class="mastery-award" id="mastery-award" hidden>
+            <span>最後の一文字</span>
+            <strong id="result-final-kanji"></strong>
+            <span class="award-flower" aria-hidden="true">✿</span>
+          </div>
+        </div>
         <div class="time-result">
           <span class="time-label"
             >吹いた時間<span class="mode-badge" id="result-mode" hidden
@@ -282,7 +334,7 @@
           <div>
             <strong>やさしく、ふーっと。</strong>
             <p>
-              準備ができたら、スマホのマイクに息を吹きかけて。およそ1秒ごとに漢字がふわり。
+              準備ができたら、スマホのマイクに息を吹きかけて。20秒で30文字がふわり。
             </p>
           </div>
         </li>
@@ -291,7 +343,7 @@
           <div>
             <strong>ひと息ついたら、おしまい。</strong>
             <p>
-              息が止まると、今回の記録が届きます。無理をせず、そなたのペースで。
+              息が止まると、今回の記録が届きます。25秒まで届くと、最後の一文字で皆伝に。無理をせず、そなたのペースで。
             </p>
           </div>
         </li>
