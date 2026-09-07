@@ -292,9 +292,6 @@ function showResult() {
   $("finale-effect").hidden = true;
   setState("result");
   $("result-dialog").dataset.mastery = String(lastResult.mastery);
-  $("result-overline").textContent = lastResult.mastery
-    ? "法螺貝道場・皆伝"
-    : "本日の、ひと吹き";
   $("result-stamp").textContent = lastResult.mastery ? "皆伝" : "大変\nよき音";
   $("mastery-award").hidden = !lastResult.mastery;
   $("result-final-kanji").textContent = lastResult.mastery
