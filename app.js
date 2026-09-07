@@ -229,15 +229,6 @@ function advanceRound(elapsedMs) {
     round.glyphs.push(CONFIG.finalKanji);
   if (progress.charging) {
     if ($("dojo").dataset.phase !== "charging") {
-      // Start the gentler motion from the current pose, without a visual jump.
-      $("dojo").style.setProperty(
-        "--charge-entry",
-        getComputedStyle(document.querySelector(".character-c")).transform,
-      );
-      $("dojo").style.setProperty(
-        "--charge-duration",
-        `${CONFIG.maxBlowSeconds - CONFIG.regularPhaseSeconds}s`,
-      );
       $("dojo").dataset.phase = "charging";
       $("charge-cue").hidden = false;
       $("charge-orbit").hidden = false;

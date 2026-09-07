@@ -1218,21 +1218,17 @@ button:not(:disabled):active,
 }
 
 /* Final five seconds: gather light at the conch, then release the reward glyph. */
-[data-phase="charging"] .character-c {
-  animation: charge-breathe var(--charge-duration, 5s) ease-in-out both;
+[data-state="blowing"][data-phase="charging"] .character-c img {
+  transform-origin: 68% 72%;
+  animation: charge-pop 0.42s ease-in-out 2;
 }
-@keyframes charge-breathe {
-  from {
-    transform: var(--charge-entry, none);
-  }
-  12%,
-  56%,
+@keyframes charge-pop {
+  0%,
   100% {
-    transform: translateY(0) scale(1);
+    transform: none;
   }
-  34%,
-  78% {
-    transform: translateY(-1px) scale(1.014);
+  50% {
+    transform: scale(1.035) rotate(1deg);
   }
 }
 .charge-cue {
