@@ -2,6 +2,7 @@ import { CONFIG } from "./config.js";
 
 // The first four glyphs form the playful "ぶおー" opening sequence.
 // Following glyphs have the reading オ / お, including kun and uncommon readings.
+// Prefer positive or neutral senses: harmony, nature, places, and everyday objects.
 // Reading references: https://www.kanjipedia.jp/sakuin/onkun/%E3%82%AA
 // https://kanjitisiki.com/yomi-sakuin/05.html (the オ and お sections only).
 export const OPENING_KANJI = Object.freeze(["武", "謳", "鶯", "王"]);
@@ -16,27 +17,27 @@ export const O_KANJI = Object.freeze([
   "烏",
   "牡",
   "苧",
-  "阿",
-  "嗚",
-  "飫",
-  "汚",
-  "悪",
+  "咊", // Harmony; a variant of 和.
+  "鴮", // Pelican.
+  "醧", // A gathering of close friends.
+  "箊", // A bamboo name.
+  "荢", // Used in personal and place names.
   "唹",
   "塢",
-  "淤",
-  "洿",
+  "嵨", // A mountain name.
+  "埡", // Earth; plastering with earth.
   "鄔",
-  "瘀",
+  "鎢", // A small pot; tungsten.
   "杇",
-  "汙",
+  "釫", // A trowel or farming tool.
   "龢",
   "圬",
   "弙",
-  "棜",
+  "緖", // Connections; the older form of 緒.
   "瑦",
   "螐",
   "隖",
-  "饇",
+  "陓", // An ancient place name.
   "鰞",
 ]);
 

@@ -86,6 +86,8 @@ Linux 环境可使用 `npx playwright install --with-deps chromium` 安装浏览
 
 候选汉字位于 [`breath.js`](breath.js) 的 `O_KANJI` 中。开头四字是固定的趣味序列；后续普通候选具有「お／オ」读音，包括部分生僻字和表外读音。最终奖励字「芳」取自依田芳乃的名字，独立于普通字池。读音参考[漢字ペディア](https://www.kanjipedia.jp/sakuin/onkun/%E3%82%AA)与[漢字辞典音训索引](https://kanjitisiki.com/yomi-sakuin/05.html)。
 
+字库按主要字义与游戏氛围筛选中性或积极的候选，例如[咊（和睦）](https://kanjitisiki.com/jis4/0046.html)、[箊（竹名）](https://kanjitisiki.com/kanji1/6700.html)、[鴮（鹈鹕）](https://kanjitisiki.com/kanji1/11424.html)。扩充时应同时核对读音与释义，避免污秽、病痛、悲叹、厌倦等消极联想。
+
 ## 部署
 
 仓库已配置 GitHub Actions 自动部署至 GitHub Pages。复用本项目时：
