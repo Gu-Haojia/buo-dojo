@@ -158,7 +158,6 @@ function reset() {
   $("live-time").textContent = "0.0";
   $("dojo").dataset.phase = "regular";
   $("dojo").style.setProperty("--charge", 0);
-  $("dojo").style.setProperty("--blow-speed", "0.72s");
   $("charge-cue").hidden = true;
   $("charge-orbit").hidden = true;
   $("finale-effect").hidden = true;
@@ -230,6 +229,15 @@ function advanceRound(elapsedMs) {
     round.glyphs.push(CONFIG.finalKanji);
   if (progress.charging) {
     if ($("dojo").dataset.phase !== "charging") {
+      // Start the gentler motion from the current pose, without a visual jump.
+      $("dojo").style.setProperty(
+        "--charge-entry",
+        getComputedStyle(document.querySelector(".character-c")).transform,
+      );
+      $("dojo").style.setProperty(
+        "--charge-duration",
+        `${CONFIG.maxBlowSeconds - CONFIG.regularPhaseSeconds}s`,
+      );
       $("dojo").dataset.phase = "charging";
       $("charge-cue").hidden = false;
       $("charge-orbit").hidden = false;
@@ -237,10 +245,6 @@ function advanceRound(elapsedMs) {
       $("button-note").textContent = "花がそろうと、最後のひと文字。";
     }
     $("dojo").style.setProperty("--charge", progress.charge);
-    $("dojo").style.setProperty(
-      "--blow-speed",
-      `${0.72 - progress.charge * 0.3}s`,
-    );
     const remaining = Math.ceil(
       (CONFIG.maxBlowSeconds * 1000 - round.elapsedMs) / 1000,
     );

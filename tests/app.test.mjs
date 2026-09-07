@@ -115,6 +115,7 @@ async function setup() {
     navigator: {},
     location: { href: "https://sample.github.io/yoshino/" },
     Image: class {},
+    getComputedStyle: () => ({ transform: "none" }),
     performance: { now: () => clock },
     requestAnimationFrame: (callback) => {
       const id = ++nextId;
