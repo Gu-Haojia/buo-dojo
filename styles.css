@@ -1218,20 +1218,8 @@ button:not(:disabled):active,
 }
 
 /* Final five seconds: gather light at the conch, then release the reward glyph. */
-[data-state="blowing"][data-phase="charging"] .character-c {
-  animation:
-    blow 0.72s ease-in-out infinite,
-    charge-kick 0.26s ease-in-out 2;
-}
-/* Match the first version's full pose range and brisk charging cadence. */
-@keyframes charge-kick {
-  0%,
-  100% {
-    transform: scale(0.98) rotate(-1deg);
-  }
-  50% {
-    transform: scale(1.035) rotate(1deg);
-  }
+.character-c {
+  animation-duration: var(--blow-speed, 0.72s);
 }
 .charge-cue {
   position: absolute;
@@ -1321,6 +1309,9 @@ button:not(:disabled):active,
 }
 [data-state="celebrating"] .speech {
   opacity: 0;
+}
+[data-state="celebrating"] .character-c {
+  animation-duration: 1.5s;
 }
 .finale-effect {
   position: absolute;
