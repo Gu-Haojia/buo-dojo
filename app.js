@@ -242,7 +242,8 @@ function advanceRound(elapsedMs) {
     $("dojo").style.setProperty("--charge", progress.charge);
     // Changing duration would recalculate every elapsed iteration. Adjust the
     // playback rate instead so acceleration preserves the current pose.
-    round.animation?.updatePlaybackRate(0.72 / (0.72 - progress.charge * 0.2));
+    const period = 0.72 * (1 - progress.charge) + 0.3 * progress.charge;
+    round.animation?.updatePlaybackRate(0.72 / period);
     const remaining = Math.ceil(
       (CONFIG.maxBlowSeconds * 1000 - round.elapsedMs) / 1000,
     );

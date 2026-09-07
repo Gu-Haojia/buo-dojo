@@ -265,7 +265,7 @@ test("charging and the final animation keep the stage fixed before mastery resul
   await expect(page.locator("#result-overline")).toHaveText("本日の、ひと吹き");
 });
 
-test("charging completes about eight real animation cycles without retiming past motion", async ({
+test("charging reaches a 0.3-second period over about ten real animation cycles", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 393, height: 852 });
@@ -305,6 +305,7 @@ test("charging completes about eight real animation cycles without retiming past
           resolve({
             seconds: (last.time - first.time) / 1000,
             cycles: last.phase - first.phase,
+            finalPeriod: last.period,
           });
           return;
         }
@@ -313,6 +314,7 @@ test("charging completes about eight real animation cycles without retiming past
           const value = {
             time: document.timeline.currentTime,
             phase: timing.currentIteration + timing.progress,
+            period: timing.duration / animation.playbackRate / 1000,
           };
           first ||= value;
           last = value;
@@ -324,8 +326,10 @@ test("charging completes about eight real animation cycles without retiming past
   });
   await page.keyboard.up("Space");
   expect(motion.seconds).toBeGreaterThan(4.7);
-  expect(motion.cycles).toBeGreaterThan(7.5);
-  expect(motion.cycles).toBeLessThan(9);
+  expect(motion.cycles).toBeGreaterThan(9.5);
+  expect(motion.cycles).toBeLessThan(11.2);
+  expect(motion.finalPeriod).toBeGreaterThanOrEqual(0.3);
+  expect(motion.finalPeriod).toBeLessThan(0.32);
   await expect(page.locator("#result-dialog")).toBeVisible();
   await expect(page.locator("#result-stamp")).toHaveText("皆伝");
   await expect(page.locator("#result-overline")).toHaveText("本日の、ひと吹き");
