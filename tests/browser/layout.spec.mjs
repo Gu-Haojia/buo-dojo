@@ -1,4 +1,49 @@
 import { test, expect } from "@playwright/test";
+import { OPENING_KANJI, O_KANJI } from "../../breath.js";
+import { CONFIG } from "../../config.js";
+
+test("every game kanji renders from the bundled font without system fallback", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const glyphs = [...OPENING_KANJI, ...O_KANJI, CONFIG.finalKanji];
+  await page.evaluate((glyphs) => {
+    const list = document.createElement("div");
+    list.id = "font-coverage";
+    list.className = "result-kanji";
+    for (const glyph of glyphs) {
+      const tile = document.createElement("span");
+      tile.textContent = glyph;
+      list.append(tile);
+    }
+    document.body.append(list);
+  }, glyphs);
+  await page.evaluate(() => document.fonts.ready);
+
+  // Computed font-family and document.fonts.check do not detect missing glyphs.
+  // Inspect the fonts that Chromium actually used for each rendered character.
+  const session = await page.context().newCDPSession(page);
+  await session.send("DOM.enable");
+  await session.send("CSS.enable");
+  const { root } = await session.send("DOM.getDocument");
+  const { nodeIds } = await session.send("DOM.querySelectorAll", {
+    nodeId: root.nodeId,
+    selector: "#font-coverage span",
+  });
+  expect(nodeIds).toHaveLength(glyphs.length);
+  for (let i = 0; i < nodeIds.length; i++) {
+    const { fonts } = await session.send("CSS.getPlatformFontsForNode", {
+      nodeId: nodeIds[i],
+    });
+    expect(fonts, glyphs[i]).toHaveLength(1);
+    expect(fonts[0], glyphs[i]).toMatchObject({
+      familyName: "Dojo Kanji",
+      isCustomFont: true,
+      glyphCount: 1,
+    });
+  }
+  await session.detach();
+});
 
 async function prepare(page, viewport) {
   await page.setViewportSize(viewport);

@@ -65,7 +65,7 @@ Linux 环境可使用 `npx playwright install --with-deps chromium` 安装浏览
 ├── app.js                     # 游戏交互、麦克风生命周期与分享
 ├── breath.js                  # 吹气检测与汉字序列
 ├── config.js                  # 游戏配置
-├── assets/                    # 人物与标题图片
+├── assets/                    # 人物、标题图片与游戏汉字字体
 ├── scripts/                   # 开发服务器、构建与素材处理脚本
 ├── tests/                     # 逻辑、交互与浏览器布局测试
 └── .github/workflows/pages.yml # GitHub Pages 自动部署
@@ -87,6 +87,8 @@ Linux 环境可使用 `npx playwright install --with-deps chromium` 安装浏览
 候选汉字位于 [`breath.js`](breath.js) 的 `O_KANJI` 中。开头四字是固定的趣味序列；后续普通候选具有「お／オ」读音，包括部分生僻字和表外读音。最终奖励字「芳」取自依田芳乃的名字，独立于普通字池。读音参考[漢字ペディア](https://www.kanjipedia.jp/sakuin/onkun/%E3%82%AA)与[漢字辞典音训索引](https://kanjitisiki.com/yomi-sakuin/05.html)。
 
 字库按主要字义与游戏氛围筛选中性或积极的候选，例如[咊（和睦）](https://kanjitisiki.com/jis4/0046.html)、[箊（竹名）](https://kanjitisiki.com/kanji1/6700.html)、[鴮（鹈鹕）](https://kanjitisiki.com/kanji1/11424.html)。扩充时应同时核对读音与释义，避免污秽、病痛、悲叹、厌倦等消极联想。
+
+游戏汉字使用随站点提供的精简明朝体字体，避免生僻字在不同设备上回退到其他字形。修改候选池或奖励字后，需按 [字体说明](assets/fonts/README.md) 重新生成字体子集并运行字体覆盖测试。
 
 ## 部署
 
@@ -115,6 +117,8 @@ Linux 环境可使用 `npx playwright install --with-deps chromium` 安装浏览
 ## 许可与版权
 
 本仓库暂未指定开源许可证。人物、名称、标识及相关图像素材的权利归各自权利人所有。
+
+随附的 Dojo Kanji 字体子集基于 Noto Serif CJK JP，按 [SIL Open Font License 1.1](assets/fonts/OFL.txt) 分发；来源与修改说明见 [字体说明](assets/fonts/README.md)。此许可证仅适用于该字体。
 
 このサイトはバンダイナムコエンターテインメント株式会社および各関連企業・団体とは一切関係ありません。
 

@@ -1,4 +1,11 @@
 @charset "UTF-8";
+@font-face {
+  font-family: "Dojo Kanji";
+  src: url("./assets/fonts/dojo-kanji.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
 :root {
   --paper: #fffaf3;
   --ink: #664938;
@@ -9,6 +16,7 @@
   --teal-light: #e4f1e8;
   --line: #e8dccc;
   --serif: "Hiragino Mincho ProN", "Yu Mincho", YuMincho, serif;
+  --kanji: "Dojo Kanji", var(--serif);
   --sans:
     "Hiragino Maru Gothic ProN", "Hiragino Kaku Gothic ProN", "Yu Gothic",
     Meiryo, sans-serif;
@@ -354,7 +362,7 @@ button:not(:disabled):active,
   position: absolute;
   left: 32%;
   top: 51%;
-  font-family: var(--serif);
+  font-family: var(--kanji);
   font-weight: 800;
   font-size: 44px;
   color: var(--particle-color, var(--coral));
@@ -714,7 +722,7 @@ button:not(:disabled):active,
   flex: none;
   width: var(--tile-size);
   height: var(--tile-size);
-  font-family: var(--serif);
+  font-family: var(--kanji);
   font-weight: 700;
   font-size: clamp(20px, calc(var(--tile-size) * 0.65), 28px);
   line-height: 1;
@@ -1334,7 +1342,7 @@ button:not(:disabled):active,
   position: absolute;
   left: 50%;
   top: 22%;
-  font-family: var(--serif);
+  font-family: var(--kanji);
   font-size: 78px;
   font-weight: 800;
   line-height: 1;
@@ -1464,7 +1472,7 @@ button:not(:disabled):active,
   border-radius: 18px 18px 9px 9px;
   background: linear-gradient(145deg, #fffef5, #f5eac5);
   box-shadow: 0 3px 0 #ded2a54d;
-  font-family: var(--serif);
+  font-family: var(--kanji);
   font-size: 43px;
   line-height: 1;
   color: var(--teal);
