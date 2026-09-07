@@ -47,6 +47,52 @@ async function prepare(page, viewport) {
   );
 }
 
+test("browser toolbar heights do not resize the character, logo, or controls", async ({
+  page,
+}) => {
+  await prepare(page, { width: 393, height: 756 });
+  const measure = () =>
+    page.evaluate(() => {
+      const selectors = [
+        ".stage",
+        ".character-a",
+        ".title-logo",
+        ".speech",
+        "#start-button",
+        "#help-button",
+      ];
+      return selectors.map((selector) => {
+        const element = document.querySelector(selector);
+        const style = getComputedStyle(element);
+        const box = element.getBoundingClientRect();
+        return {
+          selector,
+          width: parseFloat(style.width),
+          height: parseFloat(style.height),
+          font: parseFloat(style.fontSize),
+          bottom: box.bottom,
+        };
+      });
+    });
+  const baseline = await measure();
+  for (const height of [640, 650, 664, 740, 844]) {
+    await page.setViewportSize({ width: 393, height });
+    await page.clock.runFor(100);
+    const current = await measure();
+    for (let i = 0; i < current.length; i++) {
+      for (const dimension of ["width", "height", "font"])
+        expect(
+          current[i][dimension],
+          `${current[i].selector} ${dimension} at viewport height ${height}`,
+        ).toBeCloseTo(baseline[i][dimension], 0);
+    }
+    const button = current.find(
+      (element) => element.selector === "#start-button",
+    );
+    expect(button.bottom).toBeLessThanOrEqual(height);
+  }
+});
+
 for (const viewport of [
   { width: 320, height: 568 },
   { width: 375, height: 667 },

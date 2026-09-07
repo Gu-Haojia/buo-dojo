@@ -178,7 +178,9 @@ button:not(:disabled):active,
 .stage {
   position: relative;
   flex: none;
-  height: clamp(220px, calc(100svh - 432px), 400px);
+  /* Browser toolbars change viewport height, so size the art by page width. */
+  height: auto;
+  aspect-ratio: 10 / 9;
   margin: 12px -7px 0;
   isolation: isolate;
 }
@@ -1032,53 +1034,9 @@ button:not(:disabled):active,
   }
 }
 @media (max-height: 740px) and (max-width: 599px) {
-  .dojo {
-    padding-top: calc(8px + env(safe-area-inset-top));
-    padding-bottom: calc(10px + env(safe-area-inset-bottom));
-  }
-  .stage {
-    margin-top: 5px;
-  }
-  .title-logo {
-    width: calc(100% - 10px);
-    margin: 29px 5px -4px;
-  }
-  .round-button {
+  .modal .round-button {
     width: 30px;
     height: 30px;
-  }
-  .speech {
-    top: 0;
-    font-size: 13px;
-    padding: 9px 12px;
-  }
-  .character-a {
-    margin-left: -52%;
-  }
-  .character-b {
-    margin-left: -36%;
-  }
-  .character-c {
-    margin-left: -43%;
-  }
-  .status-line {
-    margin-bottom: 5px;
-    min-height: 26px;
-  }
-  .play-panel {
-    padding-top: 8px;
-  }
-  .primary-button {
-    min-height: 54px;
-  }
-  .button-note {
-    margin-top: 12px;
-  }
-  .footer {
-    padding-top: 9px;
-  }
-  .footer small {
-    margin-top: 4px;
   }
 }
 /* The yukata's blue is the main accent; the shell's red stays a small accent. */
@@ -1239,15 +1197,6 @@ button:not(:disabled):active,
     margin-top: 7px;
   }
 }
-@media (max-height: 650px) and (max-width: 599px) {
-  .stage {
-    height: 200px;
-  }
-  .play-panel {
-    grid-template-rows: minmax(32px, auto) 17px 54px minmax(32px, auto) 68px;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .result-kanji span,
   .modal[open] {
