@@ -55,13 +55,13 @@ npm run build
 
 ## 修改投票地址
 
-`config.js` 中的 `voteUrl` 按要求留空。此时按钮显示为待准备状态，点击只提示「投票先は、ただいま準備中です」。有地址后填写，例如：
+`config.js` 中的 `voteUrl` 已设置为官方的[依田芳乃总选举投票页](https://idolmaster-official.jp/cinderellagirls/vote2026/vote/idol/yorita_yoshino)：
 
 ```js
-voteUrl: 'https://你的正式投票地址',
+voteUrl: 'https://idolmaster-official.jp/cinderellagirls/vote2026/vote/idol/yorita_yoshino',
 ```
 
-仅接受 HTTP / HTTPS，实际跳转新标签页。该按钮打开投票页面，不代替玩家提交投票。
+仅接受 HTTP / HTTPS，实际跳转新标签页。该按钮打开投票页面，不代替玩家提交投票。如需暂时关闭入口，可将 `voteUrl` 设为空字符串，按钮将显示为待准备状态。
 
 ## 吹气检测的范围
 

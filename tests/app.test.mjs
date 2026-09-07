@@ -178,7 +178,7 @@ function streamFixture() {
   return { track, stream: { getTracks: () => [track] } };
 }
 
-test("demo: exact glyph order, release, replay, share, and pending vote", async () => {
+test("demo: exact glyph order, release, replay, share, and official Yoshino voting link", async () => {
   const env = await setup();
   try {
     assert.equal(env.state, "idle");
@@ -205,8 +205,11 @@ test("demo: exact glyph order, release, replay, share, and pending vote", async 
     await env.$("share-button").emit("click");
     assert.match(shared, /【おためし】3.5秒/);
     assert.match(shared, /https:\/\/sample.github.io\/yoshino\//);
-    await env.$("vote-button").emit("click");
-    assert.match(env.$("toast").textContent, /準備中/);
+    assert.equal(
+      env.$("vote-button").href,
+      "https://idolmaster-official.jp/cinderellagirls/vote2026/vote/idol/yorita_yoshino",
+    );
+    assert.equal(env.$("vote-button").attributes["aria-disabled"], undefined);
     await env.$("again-button").emit("click");
     assert.equal(env.state, "demo-ready");
     assert.equal(env.$("live-count").textContent, "0");

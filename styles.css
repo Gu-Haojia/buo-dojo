@@ -557,9 +557,15 @@ button:not(:disabled):active,
 .footer small {
   display: block;
   margin-top: 7px;
-  font-size: 10px;
-  color: #ac9e8e;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  color: #927f70;
+  letter-spacing: 0.02em;
+  line-height: 1.75;
+}
+.footer .site-copyright {
+  margin-top: 10px;
+  letter-spacing: 0;
+  line-height: 1.5;
 }
 [data-state="requesting"] .status-dot,
 [data-state="calibrating"] .status-dot,
@@ -993,9 +999,7 @@ button:not(:disabled):active,
     padding: 26px 0;
   }
   .dojo {
-    min-height: 850px;
-    height: calc(100svh - 52px);
-    max-height: 940px;
+    min-height: max(850px, calc(100svh - 52px));
     border-radius: 30px;
     border: 1px solid #e8dcca;
     padding-left: 34px;
