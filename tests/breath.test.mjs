@@ -127,13 +127,13 @@ test("both configured and default limits stop at 30 seconds even after a delayed
   assert.equal(end.capped, true);
 });
 test("sensitivity and measured ambient noise affect the threshold", () => {
-  const detector = calibrated();
+  const detector = calibrated({ sensitivity: 65 });
   const normal = detector.threshold;
   detector.sensitivity = 100;
   assert.ok(detector.threshold < normal);
   detector.sensitivity = 0;
   assert.ok(detector.threshold > normal);
-  const noisy = new BreathDetector();
+  const noisy = new BreathDetector({ sensitivity: 65 });
   for (let now = 0; now <= 800; now += 20)
     noisy.update(now, { ...quiet, rms: 0.015 });
   assert.ok(noisy.threshold > normal);

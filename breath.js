@@ -105,7 +105,7 @@ export function analyzeSignal(samples, spectrum, sampleRate) {
 /** Calibrate → sustained onset → continuous breath → trailing silence. */
 export class BreathDetector {
   constructor({
-    sensitivity = 65,
+    sensitivity = 100,
     calibrationMs = 800,
     startHoldMs = 200,
     endSilenceMs = 750,

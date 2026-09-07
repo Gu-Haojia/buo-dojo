@@ -8,7 +8,7 @@ class Element {
     this.id = id;
     this.hidden = false;
     this.textContent = "";
-    this.value = "65";
+    this.value = "100";
     this.dataset = {};
     this.attributes = {};
     this.children = [];
