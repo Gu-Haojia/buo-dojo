@@ -14,7 +14,7 @@ class Element {
     this.children = [];
     this.listeners = {};
     this.style = { setProperty() {} };
-    this.classList = { contains: () => false };
+    this.classList = { contains: () => false, remove() {}, toggle() {} };
   }
   addEventListener(name, fn) {
     (this.listeners[name] ||= []).push(fn);
@@ -218,6 +218,8 @@ test("demo: exact glyph order, release, replay, share, and official Yoshino voti
       },
     };
     await env.$("share-button").emit("click");
+    assert.equal(env.$("result-dialog").dataset.view, "share");
+    await env.$("share-copy-text").emit("click");
     assert.match(shared, /【おためし】2.5秒/);
     assert.match(shared, /https:\/\/sample.github.io\/yoshino\//);
     assert.equal(
@@ -274,6 +276,7 @@ test("demo caps at 25 seconds, celebrates, preserves the drawn order, and reshuf
       },
     };
     await env.$("share-button").emit("click");
+    await env.$("share-copy-text").emit("click");
     assert.ok(shared.includes(`「${first.join("")}」`));
     assert.match(shared, /【おためし】【皆伝】/);
 
@@ -289,6 +292,7 @@ test("demo caps at 25 seconds, celebrates, preserves the drawn order, and reshuf
     assert.equal(new Set(second).size, 31);
     assert.notDeepEqual(second.slice(4), first.slice(4));
     await env.$("share-button").emit("click");
+    await env.$("share-copy-text").emit("click");
     assert.ok(shared.includes(`「${second.join("")}」`));
   } finally {
     env.restore();
@@ -359,27 +363,18 @@ test("calibration reaches listening and moving to the background releases the mi
   }
 });
 
-test("native share cancellation has no clipboard side effect; unavailable clipboard offers selectable text", async () => {
+test("X sharing offers selectable post text when the clipboard is unavailable", async () => {
   const env = await setup();
   try {
     await env.$("demo-button").emit("click");
     await env.$("hold-button").emit("pointerdown", { button: 0, pointerId: 1 });
     env.setClock(1200);
     await env.$("hold-button").emit("pointerup", { pointerId: 1 });
-    let copied = false;
-    env.navigator.share = async () => {
-      throw Object.assign(new Error(), { name: "AbortError" });
-    };
-    env.navigator.clipboard = {
-      writeText: async () => {
-        copied = true;
-      },
-    };
     await env.$("share-button").emit("click");
-    assert.equal(copied, false);
-    delete env.navigator.share;
-    delete env.navigator.clipboard;
-    await env.$("share-button").emit("click");
+    const intent = new URL(env.$("share-web").href);
+    assert.equal(intent.origin, "https://x.com");
+    assert.match(intent.searchParams.get("text"), /武謳/);
+    await env.$("share-copy-text").emit("click");
     assert.equal(env.$("share-fallback").hidden, false);
     assert.match(env.$("share-fallback").value, /武謳/);
   } finally {

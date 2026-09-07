@@ -1,4 +1,5 @@
 import { CONFIG } from "./config.js";
+import { createResultSharing } from "./share.js";
 import {
   BreathDetector,
   analyzeSignal,
@@ -7,6 +8,7 @@ import {
 } from "./breath.js";
 
 const $ = (id) => document.getElementById(id);
+const resultSharing = createResultSharing();
 const secondsText = (ms) => (Math.floor(ms / 100) / 10).toFixed(1);
 const characters = [...document.querySelectorAll(".character")];
 const activeStates = [
@@ -333,7 +335,7 @@ function showResult() {
       return tile;
     }),
   );
-  $("share-fallback").hidden = true;
+  resultSharing.prepare(lastResult);
   showModal($("result-dialog"));
 }
 
@@ -509,34 +511,6 @@ function endHold() {
     finishRound(performance.now() - round.startedAt);
 }
 
-function shareText() {
-  const url = new URL("./", location.href);
-  url.search = "";
-  url.hash = "";
-  return `芳乃といっしょに、ぶおー！\n${lastResult.mode === "demo" ? "【おためし】" : ""}${lastResult.mastery ? `【皆伝】最後の一文字「${CONFIG.finalKanji}」まで！\n` : ""}${secondsText(lastResult.durationMs)}秒で「${lastResult.glyphs.join("")}」の${lastResult.glyphs.length}文字を奏でました。\n${CONFIG.shareHashtags.map((tag) => `#${tag}`).join(" ")}\n${url.href}`;
-}
-async function shareResult() {
-  if (!lastResult) return;
-  const text = shareText();
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: "ぶおー法螺貝道場", text });
-      return;
-    } catch (error) {
-      if (error.name === "AbortError") return;
-    }
-  }
-  try {
-    await navigator.clipboard.writeText(text);
-    toast("結果をコピーしました。お好きな場所に貼り付けてください。");
-  } catch {
-    $("share-fallback").value = text;
-    $("share-fallback").hidden = false;
-    $("share-fallback").focus();
-    $("share-fallback").select();
-    toast("シェア文を長押ししてコピーしてください。");
-  }
-}
 function interruptRound() {
   if (state === "blowing")
     finishRound(
@@ -599,7 +573,7 @@ $("again-button").addEventListener("click", () => {
 $("result-close").addEventListener("click", () =>
   hideModal($("result-dialog")),
 );
-$("share-button").addEventListener("click", shareResult);
+$("share-button").addEventListener("click", resultSharing.show);
 $("help-button").addEventListener("click", () => {
   if (["blowing", "celebrating"].includes(state)) {
     interruptRound();

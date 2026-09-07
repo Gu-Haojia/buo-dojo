@@ -5,6 +5,8 @@ const files = [
   "app.js",
   "breath.js",
   "config.js",
+  "share.js",
+  "share-card.js",
   "favicon.svg",
   ".nojekyll",
   "assets",
