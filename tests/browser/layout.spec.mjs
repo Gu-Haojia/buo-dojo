@@ -265,7 +265,7 @@ test("charging and the final animation keep the stage fixed before mastery resul
   await expect(page.locator("#result-overline")).toHaveText("本日の、ひと吹き");
 });
 
-test("charging reaches a 0.3-second period over about ten real animation cycles", async ({
+test("charging reaches a 0.2-second period over about twelve real animation cycles", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 393, height: 852 });
@@ -326,10 +326,10 @@ test("charging reaches a 0.3-second period over about ten real animation cycles"
   });
   await page.keyboard.up("Space");
   expect(motion.seconds).toBeGreaterThan(4.7);
-  expect(motion.cycles).toBeGreaterThan(9.5);
-  expect(motion.cycles).toBeLessThan(11.2);
-  expect(motion.finalPeriod).toBeGreaterThanOrEqual(0.3);
-  expect(motion.finalPeriod).toBeLessThan(0.32);
+  expect(motion.cycles).toBeGreaterThan(11.3);
+  expect(motion.cycles).toBeLessThan(13.1);
+  expect(motion.finalPeriod).toBeGreaterThanOrEqual(0.2);
+  expect(motion.finalPeriod).toBeLessThan(0.22);
   await expect(page.locator("#result-dialog")).toBeVisible();
   await expect(page.locator("#result-stamp")).toHaveText("皆伝");
   await expect(page.locator("#result-overline")).toHaveText("本日の、ひと吹き");
